@@ -1,0 +1,2588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识炼炉</title>
+    <script src="lib/sweetalert2.all.min.js"></script>
+    <style>
+        /* ===== 全部样式保留 ===== */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #f5f6fa;
+            color: #1a1a2e;
+        }
+
+        @media (max-width: 900px) {
+            .tobu { padding: 0 10px; gap: 8px; }
+            .tobu > div a { font-size: 12px !important; padding: 5px 8px !important; }
+        }
+        @media (max-width: 560px) {
+            .tobu > div a { font-size: 0 !important; padding: 5px 6px !important; }
+        }
+        
+        .tobu {
+            height: 52px;
+            background: #fff;
+            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            gap: 14px;
+        }
+        
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1a1a2e;
+            letter-spacing: 2px;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .logo::before {
+            content: "🔥";
+            font-size: 16px;
+        }
+        
+        .toggle-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            transition: all .2s;
+        }
+        
+        .toggle-btn:hover {
+            background: #eee;
+        }
+        
+        .toggle-btn span {
+            display: block;
+            width: 14px;
+            height: 2px;
+            background: #444;
+            border-radius: 1px;
+            transition: all .3s;
+        }
+        
+        .toggle-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(4px, 4px);
+        }
+        
+        .toggle-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .toggle-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(4px, -4px);
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 52px);
+            margin-top: 52px;
+        }
+        
+        .zuoche {
+            width: 240px;
+            background: #fff;
+            border-right: 1px solid #eaeaea;
+            transition: width .3s ease, opacity .3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .zuoche.hidden {
+            width: 0;
+            opacity: 0;
+            border-right: none;
+        }
+        
+        .sidebar-header {
+            padding: 14px 18px 8px;
+            font-size: 11px;
+            color: #aaa;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        
+        .project-list {
+            list-style: none;
+            padding: 4px 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .project-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #555;
+            transition: all .15s;
+            position: relative;
+            margin-bottom: 2px;
+        }
+        
+        .project-item:hover {
+            background: #f5f6fa;
+        }
+        
+        .project-item.active {
+            background: #f0f4ff;
+            color: #4a6cf7;
+        }
+        
+        .project-item.active .project-menu {
+            opacity: 1;
+        }
+        
+        .project-item:hover .project-menu {
+            opacity: 1;
+        }
+        
+        .project-icon {
+            font-size: 14px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .project-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .project-count {
+            font-size: 11px;
+            color: #bbb;
+            font-weight: 500;
+        }
+        
+        .project-item.active .project-count {
+            color: #8aa0ff;
+        }
+        
+        .project-menu {
+            opacity: 0;
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #999;
+            transition: all .2s;
+        }
+        
+        .project-menu:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #666;
+        }
+        
+        .create-project-btn {
+            margin: 10px 14px 14px;
+            padding: 10px;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all .2s;
+            flex-shrink: 0;
+        }
+        
+        .create-project-btn:hover {
+            background: #2a2a3e;
+            transform: translateY(-1px);
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            right: 8px;
+            top: 36px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            min-width: 120px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #555;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dropdown-item:hover {
+            background: #f5f6fa;
+        }
+        
+        .dropdown-item.delete {
+            color: #e74c3c;
+        }
+        
+        .dropdown-item.delete:hover {
+            background: #fff0f0;
+        }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            background: #f5f6fa;
+        }
+        
+        .content-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            color: #bbb;
+        }
+        
+        .empty-state-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state h3 {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+        }
+        
+        .project-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .project-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        
+        .project-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all .2s;
+            color: #666;
+        }
+        
+        .icon-btn:hover {
+            background: #f5f6fa;
+            border-color: #ccc;
+        }
+        
+        .icon-btn.danger:hover {
+            background: #fff0f0;
+            border-color: #ffcccc;
+            color: #e74c3c;
+        }
+        
+        .section {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .dot-choice {
+            background: #4a6cf7;
+        }
+        
+        .dot-multi {
+            background: #9b59b6;
+        }
+        
+        .dot-fill {
+            background: #e67e22;
+        }
+        
+        .dot-dictation {
+            background: #27ae60;
+        }
+        
+        .dot-reading {
+            background: #e74c3c;
+        }
+        
+        .section-count {
+            font-size: 12px;
+            color: #aaa;
+            font-weight: 500;
+            background: #f5f6fa;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        
+        .question-card {
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #fafbfc;
+            border: 1px solid #f0f0f5;
+            margin-bottom: 10px;
+            transition: all .2s;
+            position: relative;
+        }
+        
+        .question-card:hover {
+            border-color: #e0e0e8;
+        }
+        
+        .q-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: #1a1a2e;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .q-text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.7;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .q-delete {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 14px;
+            opacity: 0;
+            transition: all .2s;
+        }
+        
+        .question-card:hover .q-delete {
+            opacity: 1;
+        }
+        
+        .q-delete:hover {
+            background: #fff0f0;
+            color: #e74c3c;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-left: 34px;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all .15s;
+            font-size: 14px;
+            color: #555;
+            border: 1px solid transparent;
+        }
+        
+        .option:hover {
+            background: #f0f4ff;
+        }
+        
+        .option input {
+            width: 16px;
+            height: 16px;
+            accent-color: #4a6cf7;
+            cursor: pointer;
+        }
+        
+        .option.selected {
+            background: #f0f4ff;
+            border-color: #4a6cf7;
+            color: #4a6cf7;
+        }
+        
+        .blank-input {
+            border: none;
+            border-bottom: 2px solid #ddd;
+            background: transparent;
+            padding: 3px 6px;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+            min-width: 100px;
+            transition: border-color .2s;
+            font-family: inherit;
+        }
+        
+        .blank-input:focus {
+            border-bottom-color: #4a6cf7;
+        }
+        
+        .blank-input::placeholder {
+            color: #ccc;
+        }
+        
+        .text-area {
+            width: 100%;
+            min-height: 70px;
+            padding: 10px 12px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+            transition: border-color .2s;
+            font-family: inherit;
+        }
+        
+        .text-area:focus {
+            border-color: #4a6cf7;
+        }
+        
+        .reading-passage {
+            background: #f8f9fa;
+            border-left: 3px solid #e74c3c;
+            padding: 16px 18px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.9;
+            color: #444;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        
+        .reading-question {
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #f0f0f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all .25s;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            width: 640px;
+            max-width: 94vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+            transform: translateY(16px) scale(0.97);
+            transition: all .25s;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-overlay.show .modal-box {
+            transform: translateY(0) scale(1);
+        }
+        
+        .modal-header {
+            padding: 20px 24px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s;
+        }
+        
+        .modal-close:hover {
+            background: #eee;
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 0 24px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .modal-footer {
+            padding: 14px 24px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+            background: #fff;
+        }
+        
+        .btn {
+            padding: 9px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        
+        .btn.ok {
+            background: #4a6cf7;
+            color: #fff;
+        }
+        
+        .btn.ok:hover {
+            background: #3a5ce7;
+        }
+        
+        .btn.cancel {
+            background: #f0f0f5;
+            color: #555;
+        }
+        
+        .btn.cancel:hover {
+            background: #e5e5ea;
+        }
+        
+        .btn.danger {
+            background: #ff4757;
+            color: #fff;
+        }
+        
+        .btn.danger:hover {
+            background: #e83a49;
+        }
+        
+        .confirm-message {
+            font-size: 14px;
+            color: #444;
+            line-height: 1.7;
+            padding: 8px 0 4px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: all .2s;
+            font-family: inherit;
+            background: #fafbfc;
+        }
+        
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            border-color: #4a6cf7;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.08);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.7;
+        }
+        
+        .form-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+        
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .option-row input[type="text"] {
+            flex: 1;
+        }
+        
+        .option-row input[type="radio"],
+        .option-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4a6cf7;
+            cursor: pointer;
+        }
+        
+        .opt-label {
+            font-size: 13px;
+            color: #888;
+            font-weight: 600;
+            min-width: 20px;
+        }
+        
+        .btn-add-opt {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 1.5px dashed #ddd;
+            border-radius: 8px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all .2s;
+            margin-top: 4px;
+        }
+        
+        .btn-add-opt:hover {
+            border-color: #4a6cf7;
+            color: #4a6cf7;
+            background: #f0f4ff;
+        }
+        
+        .create-mode-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            padding: 4px;
+            background: #f5f6fa;
+            border-radius: 10px;
+        }
+        
+        .create-mode-tab {
+            flex: 1;
+            padding: 10px 4px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+        }
+        
+        .create-mode-tab:hover {
+            color: #555;
+        }
+        
+        .create-mode-tab.active {
+            background: #fff;
+            color: #1a1a2e;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        
+        .type-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            padding: 4px;
+            background: #f5f6fa;
+            border-radius: 10px;
+        }
+        
+        .type-tab {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+        }
+        
+        .type-tab:hover {
+            color: #555;
+        }
+        
+        .type-tab.active {
+            background: #fff;
+            color: #1a1a2e;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        
+        .preview-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #f0f0f5;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 16px;
+            background: #fafbfc;
+        }
+        
+        .preview-item {
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .preview-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .preview-item:hover {
+            background: #f0f4ff;
+        }
+        
+        .preview-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .tag-choice {
+            background: #eef1ff;
+            color: #4a6cf7;
+        }
+        
+        .tag-multi {
+            background: #f3e8ff;
+            color: #9b59b6;
+        }
+        
+        .tag-fill {
+            background: #fff3e0;
+            color: #e67e22;
+        }
+        
+        .tag-dictation {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+        
+        .tag-reading {
+            background: #ffebee;
+            color: #e74c3c;
+        }
+        
+        .preview-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .preview-del {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .preview-del:hover {
+            color: #e74c3c;
+            background: #fff0f0;
+        }
+        
+        .preview-empty {
+            text-align: center;
+            padding: 20px;
+            color: #bbb;
+            font-size: 13px;
+        }
+        
+        .divider {
+            height: 1px;
+            background: #f0f0f5;
+            margin: 16px 0;
+        }
+        
+        .auto-create-area {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .auto-create-area .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .auto-create-area h4 {
+            font-size: 15px;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        
+        .auto-create-area p {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+        
+        .auto-create-btn {
+            padding: 12px 28px;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        
+        .auto-create-btn:hover {
+            background: #2a2a3e;
+            transform: translateY(-1px);
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .note-select-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            background: #fafbfc;
+        }
+        
+        .note-select-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f5;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .note-select-item:hover {
+            background: #f0f4ff;
+        }
+        
+        .note-select-item.selected {
+            background: #ecf5ff;
+            border-left: 3px solid #4a6cf7;
+        }
+        
+        .note-select-item .note-check {
+            width: 16px;
+            height: 16px;
+            accent-color: #4a6cf7;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .note-select-item .note-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .note-select-item .note-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .note-select-item .note-preview {
+            font-size: 12px;
+            color: #999;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .note-select-empty {
+            text-align: center;
+            padding: 30px;
+            color: #bbb;
+            font-size: 14px;
+        }
+        
+         ::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+         ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+         ::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 3px;
+        }
+        
+         ::-webkit-scrollbar-thumb:hover {
+            background: #ccc;
+        }
+        
+        .toast-notice {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(30, 30, 60, 0.92);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        .toast-notice.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .swal2-popup {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            border-radius: 12px !important;
+        }
+        
+        .swal2-confirm {
+            background-color: #6366f1 !important;
+            border-radius: 8px !important;
+        }
+        
+        .swal2-confirm:hover {
+            background-color: #5558e0 !important;
+        }
+        
+        .swal2-cancel {
+            background-color: #e4e6eb !important;
+            color: #666 !important;
+            border-radius: 8px !important;
+        }
+        
+        .swal2-cancel:hover {
+            background-color: #d0d0d0 !important;
+        }
+        
+        .swal2-danger {
+            background-color: #ef4444 !important;
+            border-radius: 8px !important;
+        }
+        
+        .swal2-danger:hover {
+            background-color: #dc2626 !important;
+        }
+        
+        .submit-btn-area {
+            text-align: center;
+            padding: 20px 0 10px;
+        }
+        /* 答案显示样式 */
+        
+        .answer-display {
+            display: none;
+            margin-top: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13px;
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .answer-display.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .answer-display.wrong {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+<script>
+/* __FILE_FETCH_BRIDGE__ : file:// 打开时把 /api 请求转到本地应用服务，保证数据同步 */
+(function () {
+  if (location.protocol !== 'file:') return;
+  var origFetch = window.fetch ? window.fetch.bind(window) : null;
+  if (!origFetch) return;
+  var BASE = null;
+  var ready = new Promise(function (resolve) {
+    var ports = [5000, 5001, 5002, 5003, 5004];
+    var i = 0;
+    (function next() {
+      if (i >= ports.length) { resolve(null); return; }
+      var p = ports[i++];
+      origFetch('http://127.0.0.1:' + p + '/api/health', { cache: 'no-store' })
+        .then(function (r) { resolve(r.ok ? 'http://127.0.0.1:' + p : null); })
+        .catch(function () { next(); });
+    })();
+  });
+  window.fetch = function (input, init) {
+    if (typeof input === 'string' && input.charAt(0) === '/') {
+      return ready.then(function (base) {
+        return origFetch((base || 'http://127.0.0.1:5000') + input, init);
+      });
+    }
+    return origFetch(input, init);
+  };
+})();
+</script>
+</head>
+
+<body>
+    <div class="tobu">
+        <div class="logo">知识炼炉</div>
+        <button class="toggle-btn" id="toggleBtn"><span></span><span></span><span></span></button>
+        <div style="margin-left:auto;display:flex;gap:12px;align-items:center;">
+            <a href="#" onclick="window.location.href='ai_chat.html';return false;" style="text-decoration:none;color:#555;font-size:14px;padding:6px 12px;border-radius:6px;transition:all .2s;">💬 AI聊天</a>
+            <a href="#" onclick="window.location.href='swdt.html';return false;" style="text-decoration:none;color:#555;font-size:14px;padding:6px 12px;border-radius:6px;transition:all .2s;">🗺️ 思维导图</a>
+            <a href="#" onclick="window.location.href='note_fixed.html';return false;" style="text-decoration:none;color:#555;font-size:14px;padding:6px 12px;border-radius:6px;transition:all .2s;">📝 笔记</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="zuoche" id="zuoche">
+            <div class="sidebar-header">项目列表</div>
+            <ul class="project-list" id="projectList"></ul>
+            <button class="create-project-btn" onclick="openCreateProjectModal()">
+                <span>＋</span> 新建项目
+            </button>
+        </div>
+
+        <div class="content">
+            <div class="content-inner" id="contentInner">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📚</div>
+                    <h3>暂无项目</h3>
+                    <p>点击左侧「新建项目」开始创建</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建项目弹窗 -->
+    <div class="modal-overlay" id="createProjectModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">新建项目</div>
+                <button class="modal-close" onclick="closeCreateModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">项目名称</label>
+                    <input type="text" class="form-input" id="projectNameInput" placeholder="例如：期末复习">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">创建方式</label>
+                    <div class="create-mode-tabs">
+                        <button class="create-mode-tab active" data-mode="manual" onclick="switchCreateMode(this)">手动创建</button>
+                        <button class="create-mode-tab" data-mode="auto" onclick="switchCreateMode(this)">选择笔记自动创建</button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="form-group">
+                    <label class="form-label">已添加题目 <span id="previewCount" style="color:#aaa;font-weight:400;">(0)</span></label>
+                    <div class="preview-list" id="previewList">
+                        <div class="preview-empty">还没有添加题目</div>
+                    </div>
+                </div>
+
+                <div id="manualArea">
+                    <div class="type-tabs">
+                        <button class="type-tab active" data-type="choice" onclick="switchQType(this)">选择题</button>
+                        <button class="type-tab" data-type="multi" onclick="switchQType(this)">多选题</button>
+                        <button class="type-tab" data-type="fill" onclick="switchQType(this)">填空题</button>
+                        <button class="type-tab" data-type="dictation" onclick="switchQType(this)">默写题</button>
+                        <button class="type-tab" data-type="reading" onclick="switchQType(this)">阅读</button>
+                    </div>
+                    <div id="questionForm"></div>
+                </div>
+
+                <div id="autoArea" style="display:none;">
+                    <div class="auto-create-area">
+                        <div class="icon">📝</div>
+                        <h4>从笔记自动生成题目</h4>
+                        <p>选择笔记后，系统将自动生成 10 道选择题、5 道多选题、<br>5 道填空题、5 道默写题、2 篇阅读理解</p>
+                        <button class="auto-create-btn" onclick="selectNoteForAutoCreate()">选择笔记</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">取消</button>
+                <button class="btn btn-primary" onclick="createProject()">完成创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重命名弹窗 -->
+    <div class="modal-overlay" id="renameModal">
+        <div class="modal-box" style="width:400px;">
+            <div class="modal-header">
+                <div class="modal-title">重命名项目</div>
+                <button class="modal-close" onclick="closeModal('renameModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">新名称</label>
+                    <input type="text" class="form-input" id="renameInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('renameModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmRename()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 笔记选择弹窗 -->
+    <div class="modal-overlay" id="noteSelectModal">
+        <div class="modal-box" style="width: 600px;">
+            <div class="modal-header">
+                <div class="modal-title"><span>📝</span> 选择笔记</div>
+                <button class="modal-close" onclick="closeNoteSelectModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">请选择一篇笔记用于生成题目</label>
+                    <div class="note-select-list" id="noteSelectList">
+                        <div class="note-select-empty">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeNoteSelectModal()">取消</button>
+                <button class="btn btn-primary" id="confirmNoteSelectBtn" onclick="confirmNoteSelect()">确定生成</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json" onchange="handleImport(event)">
+
+    <script>
+        // ================================================================
+        // 1. 数据验证
+        // ================================================================
+        function validateProjects(data) {
+            if (!Array.isArray(data)) {
+                console.warn('❌ 数据不是数组');
+                return {
+                    valid: false,
+                    data: [],
+                    error: '数据不是数组'
+                };
+            }
+            let fixedCount = 0,
+                skippedCount = 0;
+            const valid = [];
+            for (let i = 0; i < data.length; i++) {
+                const p = data[i];
+                if (!p || typeof p !== 'object') {
+                    skippedCount++;
+                    continue;
+                }
+                if (typeof p.id !== 'number') {
+                    const parsed = parseInt(p.id);
+                    p.id = !isNaN(parsed) ? parsed : Date.now() + i;
+                    fixedCount++;
+                }
+                if (typeof p.name !== 'string') {
+                    p.name = p.name == null ? '未命名项目' : String(p.name);
+                    fixedCount++;
+                }
+                if (!p.questions || typeof p.questions !== 'object') {
+                    p.questions = {};
+                    fixedCount++;
+                }
+                if (!Array.isArray(p.questions.list)) p.questions.list = [];
+                if (typeof p.questions.currentIndex !== 'number') p.questions.currentIndex = 0;
+                valid.push(p);
+            }
+            if (fixedCount > 0 || skippedCount > 0) {
+                console.log('🔧 validateProjects: 补齐 ' + fixedCount + ' 个字段，跳过 ' + skippedCount + ' 个无效项目');
+            }
+            return {
+                valid: true,
+                data: valid,
+                count: valid.length,
+                error: null
+            };
+        }
+
+        // ================================================================
+        // 2. 数据持久化
+        // ================================================================
+        async function persistProjects() {
+            try {
+                localStorage.setItem('knowledge_furnace_projects', JSON.stringify(projects));
+                localStorage.setItem('knowledge_furnace_projects_backup', JSON.stringify(projects));
+            } catch (e) {}
+
+            try {
+                const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(projects)
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ 项目已保存到后端 (' + (result.count || projects.length) + ' 个)');
+                }
+            } catch (e) {
+                console.warn('⚠️ 保存到后端异常', e);
+            }
+        }
+
+        async function loadProjectsFromDisk() {
+            try {
+                const response = await fetch('/api/projects');
+                if (!response.ok) return {
+                    success: false
+                };
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    const validated = validateProjects(data);
+                    if (validated.valid && validated.count > 0) {
+                        try {
+                            localStorage.setItem('knowledge_furnace_projects', JSON.stringify(validated.data));
+                        } catch (e) {}
+                        return {
+                            success: true,
+                            data: validated.data,
+                            count: validated.count
+                        };
+                    }
+                }
+                return {
+                    success: false
+                };
+            } catch (e) {
+                return {
+                    success: false
+                };
+            }
+        }
+
+        function loadProjectsFromStorage() {
+            const keys = ['knowledge_furnace_projects', 'knowledge_furnace_projects_backup'];
+            for (const key of keys) {
+                try {
+                    const stored = localStorage.getItem(key);
+                    if (!stored) continue;
+                    const data = JSON.parse(stored);
+                    if (!Array.isArray(data) || data.length === 0) continue;
+                    const validated = validateProjects(data);
+                    if (validated.valid && validated.count > 0) {
+                        return {
+                            success: true,
+                            data: validated.data,
+                            count: validated.count
+                        };
+                    }
+                } catch (e) {}
+            }
+            return {
+                success: false
+            };
+        }
+
+        // ================================================================
+        // 3. 笔记列表加载
+        // ================================================================
+        async function loadNotesList() {
+            let notes = [];
+            try {
+                const response = await fetch('/api/notes');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data)) {
+                        notes = data.filter(n => n.status === 'normal');
+                        console.log('📥 从后端加载笔记，共 ' + notes.length + ' 篇');
+                        try {
+                            localStorage.setItem('deep_learning_notes_v2', JSON.stringify(notes));
+                        } catch (e) {}
+                        return notes;
+                    }
+                }
+            } catch (e) {
+                console.warn('从后端加载笔记失败', e);
+            }
+            try {
+                const stored = localStorage.getItem('deep_learning_notes_v2') || localStorage.getItem('pure_notes_blog3');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        notes = parsed.filter(n => n.status === 'normal');
+                        console.log('📥 从 localStorage 加载笔记，共 ' + notes.length + ' 篇');
+                        return notes;
+                    }
+                }
+            } catch (e) {
+                console.warn('从 localStorage 加载笔记失败', e);
+            }
+            return notes;
+        }
+
+        function renderNoteSelectList(notes) {
+            const container = document.getElementById('noteSelectList');
+            if (!notes || notes.length === 0) {
+                container.innerHTML = '<div class="note-select-empty">📭 暂无笔记，请先在笔记页面创建</div>';
+                return;
+            }
+            let html = '';
+            notes.forEach(note => {
+                const title = note.title || '无标题';
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = note.content || '';
+                const plainPreview = (tempDiv.innerText || '').slice(0, 60);
+                const isSelected = (selectedNoteId !== null && String(note.id) === String(selectedNoteId));
+                html += `
+                    <div class="note-select-item ${isSelected ? 'selected' : ''}" data-note-id="${note.id}">
+                        <input type="radio" name="noteSelect" class="note-check" value="${note.id}" ${isSelected ? 'checked' : ''}>
+                        <div class="note-info">
+                            <div class="note-title">${escapeHtml(title)}</div>
+                            <div class="note-preview">${escapeHtml(plainPreview)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+            container.querySelectorAll('.note-select-item').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'INPUT') return;
+                    const radio = this.querySelector('.note-check');
+                    if (radio) {
+                        radio.checked = true;
+                        const event = new Event('change');
+                        radio.dispatchEvent(event);
+                    }
+                });
+                const radio = el.querySelector('.note-check');
+                if (radio) {
+                    radio.addEventListener('change', function() {
+                        container.querySelectorAll('.note-select-item').forEach(item => item.classList.remove('selected'));
+                        el.classList.add('selected');
+                        selectedNoteId = this.value;
+                    });
+                }
+            });
+
+            if (notes.length > 0 && selectedNoteId === null) {
+                const firstRadio = container.querySelector('.note-check');
+                if (firstRadio) {
+                    firstRadio.checked = true;
+                    firstRadio.dispatchEvent(new Event('change'));
+                    selectedNoteId = firstRadio.value;
+                }
+            }
+        }
+
+        function openNoteSelectModal() {
+            selectedNoteId = null;
+            document.getElementById('noteSelectList').innerHTML = '<div class="note-select-empty">加载中...</div>';
+            document.getElementById('noteSelectModal').classList.add('show');
+
+            loadNotesList().then(notes => {
+                allNotes = notes;
+                renderNoteSelectList(notes);
+                const confirmBtn = document.getElementById('confirmNoteSelectBtn');
+                confirmBtn.disabled = (notes.length === 0);
+                confirmBtn.style.opacity = (notes.length === 0) ? '0.5' : '1';
+            });
+        }
+
+        function closeNoteSelectModal() {
+            document.getElementById('noteSelectModal').classList.remove('show');
+        }
+
+        function selectNoteForAutoCreate() {
+            openNoteSelectModal();
+        }
+
+        // ================================================================
+        // 4. 自动出题（含等待弹窗）
+        // ================================================================
+        async function confirmNoteSelect() {
+            if (selectedNoteId === null) {
+                showToast('请先选择一篇笔记');
+                return;
+            }
+            const note = allNotes.find(n => n && String(n.id) === String(selectedNoteId) || (n && String(n.filename) === String(selectedNoteId)));
+            if (!note) {
+                showToast('笔记不存在');
+                return;
+            }
+
+            closeNoteSelectModal();
+
+            // ========== 显示等待弹窗 ==========
+            Swal.fire({
+                title: '⏳ 正在生成题目',
+                text: 'AI 正在努力出题，请稍候...（约 1-2 分钟）',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const confirmBtn = document.getElementById('confirmNoteSelectBtn');
+                confirmBtn.textContent = '⏳ 生成中...';
+                confirmBtn.disabled = true;
+
+                const response = await fetch('/api/generate_questions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: note.filename
+                    })
+                });
+
+                Swal.close();
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || '生成失败');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // 清空临时题目
+                    tempQuestions = {
+                        choice: [],
+                        multi: [],
+                        fill: [],
+                        dictation: [],
+                        reading: []
+                    };
+                    const types = ['choice', 'multi', 'fill', 'dictation', 'reading'];
+                    types.forEach(type => {
+                        tempQuestions[type] = result.questions[type] || [];
+                    });
+                    renderPreviewList();
+                    const stats = types.map(t => `${t}: ${tempQuestions[t].length}`).join('、');
+                    showToast(`✅ 生成完成：${stats}`);
+                } else {
+                    showToast('⚠️ 生成失败：' + (result.error || '未知错误'));
+                }
+
+            } catch (err) {
+                Swal.close();
+                console.error('生成题目出错:', err);
+                showToast('❌ 生成题目出错：' + err.message);
+            } finally {
+                const confirmBtn = document.getElementById('confirmNoteSelectBtn');
+                confirmBtn.textContent = '确定生成';
+                confirmBtn.disabled = false;
+            }
+        }
+
+        // ================================================================
+        // 5. 项目列表渲染
+        // ================================================================
+        function renderProjectList() {
+            const list = document.getElementById('projectList');
+            list.innerHTML = '';
+            projects.forEach(p => {
+                const li = document.createElement('li');
+                li.className = 'project-item' + (p.id === currentProjectId ? ' active' : '');
+                li.innerHTML = `
+                    <span class="project-icon">📁</span>
+                    <span class="project-name">${escapeHtml(p.name)}</span>
+                    <span class="project-count">${getQCount(p)}</span>
+                    <button class="project-menu" onclick="event.stopPropagation();toggleProjectMenu(${p.id},this)">⋮</button>
+                    <div class="dropdown-menu" id="menu-${p.id}">
+                        <div class="dropdown-item" onclick="event.stopPropagation();startRename(${p.id})"><span>✏️</span> 重命名</div>
+                        <div class="dropdown-item delete" onclick="event.stopPropagation();deleteProject(${p.id})"><span>🗑️</span> 删除</div>
+                    </div>
+                `;
+                li.onclick = () => selectProject(p.id);
+                list.appendChild(li);
+            });
+        }
+
+        function getQCount(p) {
+            let c = 0;
+            const qs = (p && p.questions) || {};
+            for (let k in qs) {
+                const v = qs[k];
+                if (Array.isArray(v)) c += v.length;
+                else if (typeof v === 'number') c += v;
+            }
+            return c;
+        }
+
+        function toggleProjectMenu(id, btn) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m.id !== 'menu-' + id) m.classList.remove('show');
+            });
+            document.getElementById('menu-' + id).classList.toggle('show');
+        }
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        });
+
+        // ================================================================
+        // 6. 创建项目
+        // ================================================================
+        function switchCreateMode(btn) {
+            createMode = btn.dataset.mode;
+            document.querySelectorAll('.create-mode-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('manualArea').style.display = createMode === 'manual' ? 'block' : 'none';
+            document.getElementById('autoArea').style.display = createMode === 'auto' ? 'block' : 'none';
+        }
+
+        function openCreateProjectModal() {
+            tempQuestions = {
+                choice: [],
+                multi: [],
+                fill: [],
+                dictation: [],
+                reading: []
+            };
+            document.getElementById('projectNameInput').value = '';
+            document.getElementById('previewCount').textContent = '(0)';
+            createMode = 'manual';
+            document.querySelectorAll('.create-mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.create-mode-tab[data-mode="manual"]').classList.add('active');
+            document.getElementById('manualArea').style.display = 'block';
+            document.getElementById('autoArea').style.display = 'none';
+            renderPreviewList();
+            switchQType(document.querySelector('.type-tab[data-type="choice"]'));
+            document.getElementById('createProjectModal').classList.add('show');
+            setTimeout(() => document.getElementById('projectNameInput').focus(), 100);
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createProjectModal').classList.remove('show');
+            tempQuestions = {
+                choice: [],
+                multi: [],
+                fill: [],
+                dictation: [],
+                reading: []
+            };
+        }
+
+        async function createProject() {
+            const name = document.getElementById('projectNameInput').value.trim();
+            if (!name) {
+                showToast('请输入项目名称');
+                return;
+            }
+
+            const totalQ = getQCount({
+                questions: tempQuestions
+            });
+            if (totalQ === 0) {
+                showToast('请至少添加一道题目');
+                return;
+            }
+
+            const project = {
+                id: Date.now(),
+                name: name,
+                questions: JSON.parse(JSON.stringify(tempQuestions)),
+                createdAt: new Date().toLocaleString()
+            };
+            projects.push(project);
+            await persistProjects();
+            closeCreateModal();
+            renderProjectList();
+            selectProject(project.id);
+        }
+
+        // ================================================================
+        // 7. 预览列表
+        // ================================================================
+        function renderPreviewList() {
+            const container = document.getElementById('previewList');
+            let all = [];
+            const tags = {
+                choice: '选择',
+                multi: '多选',
+                fill: '填空',
+                dictation: '默写',
+                reading: '阅读'
+            };
+            const tagClasses = {
+                choice: 'tag-choice',
+                multi: 'tag-multi',
+                fill: 'tag-fill',
+                dictation: 'tag-dictation',
+                reading: 'tag-reading'
+            };
+
+            for (let type in tempQuestions) {
+                tempQuestions[type].forEach((q, idx) => {
+                    let text = '';
+                    if (type === 'choice' || type === 'multi') text = q.question;
+                    else if (type === 'fill') text = q.question;
+                    else if (type === 'dictation') text = q.title;
+                    else if (type === 'reading') text = q.passage.substring(0, 30) + '...';
+                    all.push({
+                        type,
+                        idx,
+                        text,
+                        tag: tags[type],
+                        tagClass: tagClasses[type]
+                    });
+                });
+            }
+
+            document.getElementById('previewCount').textContent = `(${all.length})`;
+
+            if (all.length === 0) {
+                container.innerHTML = '<div class="preview-empty">还没有添加题目</div>';
+                return;
+            }
+
+            container.innerHTML = all.map(item => `
+                <div class="preview-item">
+                    <span class="preview-tag ${item.tagClass}">${item.tag}</span>
+                    <span class="preview-text">${escapeHtml(item.text)}</span>
+                    <button class="preview-del" onclick="removeTempQuestion('${item.type}',${item.idx})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeTempQuestion(type, idx) {
+            tempQuestions[type].splice(idx, 1);
+            renderPreviewList();
+        }
+
+        // ================================================================
+        // 8. 手动创建题型
+        // ================================================================
+        function switchQType(btn) {
+            currentQType = btn.dataset.type;
+            document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            renderQuestionForm(currentQType);
+        }
+
+        function renderQuestionForm(type) {
+            optionCount = 2;
+            readingQCount = 3;
+            const container = document.getElementById('questionForm');
+
+            if (type === 'choice') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">题目</label>
+                        <textarea class="form-textarea" id="qText" rows="2" placeholder="请输入题目内容"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">选项</label>
+                        <div id="choiceOptions">
+                            <div class="option-row"><span class="opt-label">A</span><input type="text" class="form-input" placeholder="选项A"><input type="radio" name="correct" value="0" title="正确答案"></div>
+                            <div class="option-row"><span class="opt-label">B</span><input type="text" class="form-input" placeholder="选项B"><input type="radio" name="correct" value="1" title="正确答案"></div>
+                        </div>
+                        <button class="btn-add-opt" onclick="addOptionRow()">＋ 添加选项</button>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="addTempQuestion()">添加这道选择题</button>
+                `;
+            } else if (type === 'multi') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">题目</label>
+                        <textarea class="form-textarea" id="qText" rows="2" placeholder="请输入题目内容"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">选项（可多选正确答案）</label>
+                        <div id="multiOptions">
+                            <div class="option-row"><span class="opt-label">A</span><input type="text" class="form-input" placeholder="选项A"><input type="checkbox" name="correct" value="0" title="正确答案"></div>
+                            <div class="option-row"><span class="opt-label">B</span><input type="text" class="form-input" placeholder="选项B"><input type="checkbox" name="correct" value="1" title="正确答案"></div>
+                        </div>
+                        <button class="btn-add-opt" onclick="addOptionRowMulti()">＋ 添加选项</button>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="addTempQuestion()">添加这道多选题</button>
+                `;
+            } else if (type === 'fill') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">题目</label>
+                        <textarea class="form-textarea" id="qText" rows="3" placeholder="请输入题目，用 _____ 表示填空位置&#10;例如：中国的首都是_____，位于_____平原。"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">参考答案（用逗号分隔多个空）</label>
+                        <input type="text" class="form-input" id="qAnswer" placeholder="例如：北京，华北">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="addTempQuestion()">添加这道填空题</button>
+                `;
+            } else if (type === 'dictation') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">默写标题</label>
+                        <input type="text" class="form-input" id="qTitle" placeholder="例如：默写《静夜思》">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提示（可选）</label>
+                        <input type="text" class="form-input" id="qHint" placeholder="例如：李白的名诗，描写思乡之情">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="addTempQuestion()">添加这道默写题</button>
+                `;
+            } else if (type === 'reading') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">阅读文章</label>
+                        <textarea class="form-textarea" id="qPassage" rows="4" placeholder="请输入阅读文章"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">题目数量</label>
+                        <select class="form-select" id="qCount" onchange="renderReadingQForm()">
+                            <option value="1">1道</option><option value="2">2道</option>
+                            <option value="3" selected>3道</option><option value="4">4道</option><option value="5">5道</option>
+                        </select>
+                    </div>
+                    <div id="readingQForm"></div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="addTempQuestion()">添加这篇阅读</button>
+                `;
+                setTimeout(renderReadingQForm, 0);
+            }
+        }
+
+        function addOptionRow() {
+            const c = document.getElementById('choiceOptions');
+            const label = String.fromCharCode(65 + optionCount);
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.innerHTML = `<span class="opt-label">${label}</span><input type="text" class="form-input" placeholder="选项${label}"><input type="radio" name="correct" value="${optionCount}" title="正确答案">`;
+            c.appendChild(row);
+            optionCount++;
+        }
+
+        function addOptionRowMulti() {
+            const c = document.getElementById('multiOptions');
+            const label = String.fromCharCode(65 + optionCount);
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.innerHTML = `<span class="opt-label">${label}</span><input type="text" class="form-input" placeholder="选项${label}"><input type="checkbox" name="correct" value="${optionCount}" title="正确答案">`;
+            c.appendChild(row);
+            optionCount++;
+        }
+
+        function renderReadingQForm() {
+            readingQCount = parseInt(document.getElementById('qCount').value);
+            const c = document.getElementById('readingQForm');
+            let html = '';
+            for (let i = 0; i < readingQCount; i++) {
+                html += `
+                    <div class="form-group" style="border:1px solid #f0f0f5;border-radius:10px;padding:12px;margin-bottom:10px;">
+                        <label class="form-label">题目 ${i+1}</label>
+                        <input type="text" class="form-input" id="rqText${i}" placeholder="题目内容">
+                    </div>
+                `;
+            }
+            c.innerHTML = html;
+        }
+
+        function addTempQuestion() {
+            if (currentQType === 'choice') {
+                const text = document.getElementById('qText').value.trim();
+                if (!text) {
+                    showToast('请输入题目');
+                    return;
+                }
+                const rows = document.querySelectorAll('#choiceOptions .option-row');
+                const opts = [];
+                let correctIdx = -1;
+                rows.forEach((r, i) => {
+                    const v = r.querySelector('input[type="text"]').value.trim();
+                    if (v) opts.push(v);
+                    const radio = r.querySelector('input[type="radio"]');
+                    if (radio && radio.checked) correctIdx = i;
+                });
+                if (opts.length < 2) {
+                    showToast('请至少填写2个选项');
+                    return;
+                }
+                if (correctIdx === -1) {
+                    showToast('请选择一个正确答案');
+                    return;
+                }
+                tempQuestions.choice.push({
+                    question: text,
+                    options: opts,
+                    answer: String.fromCharCode(65 + correctIdx)
+                });
+            } else if (currentQType === 'multi') {
+                const text = document.getElementById('qText').value.trim();
+                if (!text) {
+                    showToast('请输入题目');
+                    return;
+                }
+                const rows = document.querySelectorAll('#multiOptions .option-row');
+                const opts = [];
+                let correctIndices = [];
+                rows.forEach((r, i) => {
+                    const v = r.querySelector('input[type="text"]').value.trim();
+                    if (v) opts.push(v);
+                    const cb = r.querySelector('input[type="checkbox"]');
+                    if (cb && cb.checked) correctIndices.push(i);
+                });
+                if (opts.length < 2) {
+                    showToast('请至少填写2个选项');
+                    return;
+                }
+                if (correctIndices.length === 0) {
+                    showToast('请至少选择一个正确答案');
+                    return;
+                }
+                const answer = correctIndices.map(i => String.fromCharCode(65 + i)).join('');
+                tempQuestions.multi.push({
+                    question: text,
+                    options: opts,
+                    answer: answer
+                });
+            } else if (currentQType === 'fill') {
+                const text = document.getElementById('qText').value.trim();
+                if (!text) {
+                    showToast('请输入题目');
+                    return;
+                }
+                if (!text.includes('_____')) {
+                    showToast('题目中需要包含 _____ 表示填空位置');
+                    return;
+                }
+                const ans = document.getElementById('qAnswer').value.trim();
+                if (!ans) {
+                    showToast('请填写参考答案');
+                    return;
+                }
+                tempQuestions.fill.push({
+                    question: text,
+                    answer: ans
+                });
+            } else if (currentQType === 'dictation') {
+                const title = document.getElementById('qTitle').value.trim();
+                if (!title) {
+                    showToast('请输入默写标题');
+                    return;
+                }
+                const hint = document.getElementById('qHint').value.trim();
+                tempQuestions.dictation.push({
+                    title: title,
+                    hint: hint
+                });
+            } else if (currentQType === 'reading') {
+                const passage = document.getElementById('qPassage').value.trim();
+                if (!passage) {
+                    showToast('请输入阅读文章');
+                    return;
+                }
+                const count = parseInt(document.getElementById('qCount').value);
+                const questions = [];
+                for (let i = 0; i < count; i++) {
+                    const t = document.getElementById(`rqText${i}`).value.trim();
+                    if (!t) {
+                        showToast(`请填写题目 ${i+1}`);
+                        return;
+                    }
+                    questions.push({
+                        question: t
+                    });
+                }
+                tempQuestions.reading.push({
+                    passage: passage,
+                    questions: questions
+                });
+            }
+
+            renderPreviewList();
+            renderQuestionForm(currentQType);
+        }
+
+        // ================================================================
+        // 9. 项目操作 + 渲染题目（不显示答案）
+        // ================================================================
+        function selectProject(id) {
+            currentProjectId = id;
+            renderProjectList();
+            const p = projects.find(x => x.id === id);
+            if (!p) return;
+
+            const inner = document.getElementById('contentInner');
+            inner.innerHTML = `
+                <div class="project-header">
+                    <div class="project-title">${escapeHtml(p.name)}</div>
+                    <div class="project-actions">
+                        <button class="icon-btn" title="导出项目" onclick="exportProject()">⬇️</button>
+                        <button class="icon-btn" title="导入项目" onclick="document.getElementById('fileInput').click()">⬆️</button>
+                        <button class="icon-btn danger" title="删除项目" onclick="deleteProject(${p.id})">🗑️</button>
+                    </div>
+                </div>
+                ${renderSections(p)}
+                <div class="submit-btn-area">
+                    <button class="btn ok" onclick="submitAnswers()">📝 提交答案</button>
+                </div>
+            `;
+        }
+
+        function renderSections(p) {
+            const types = [{
+                key: 'choice',
+                icon: '🔘',
+                name: '选择题',
+                dot: 'dot-choice'
+            }, {
+                key: 'multi',
+                icon: '☑️',
+                name: '多选题',
+                dot: 'dot-multi'
+            }, {
+                key: 'fill',
+                icon: '✏️',
+                name: '填空题',
+                dot: 'dot-fill'
+            }, {
+                key: 'dictation',
+                icon: '📝',
+                name: '默写题',
+                dot: 'dot-dictation'
+            }, {
+                key: 'reading',
+                icon: '📖',
+                name: '阅读理解',
+                dot: 'dot-reading'
+            }];
+            let html = '';
+            types.forEach(t => {
+                const qList = p.questions[t.key];
+                html += `<div class="section">
+                    <div class="section-header">
+                        <div class="section-title"><span class="dot ${t.dot}"></span>${t.name}</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="section-count">${qList.length} 题</span>
+                        </div>
+                    </div>
+                    <div id="container-${t.key}">
+                        ${qList.length === 0
+                            ? '<div style="text-align:center;padding:24px;color:#bbb;font-size:13px;">暂无题目</div>'
+                            : renderQuestions(t.key, qList)}
+                    </div>
+                </div>`;
+            });
+            return html;
+        }
+
+        // 渲染题目（不显示答案，留出 answer-display 容器）
+        function renderQuestions(type, qList) {
+            let html = '';
+            qList.forEach((q, idx) => {
+                        html += `<div class="question-card" id="q-${type}-${idx}">`;
+                        html += `<button class="q-delete" onclick="deleteQuestion('${type}',${idx})">✕</button>`;
+
+                        if (type === 'choice') {
+                            html += `<div class="q-text"><span class="q-num">${idx+1}</span><span>${escapeHtml(q.question)}</span></div>`;
+                            html += `<div class="options">`;
+                            q.options.forEach((opt, oi) => {
+                                const val = String.fromCharCode(65 + oi);
+                                html += `<label class="option" onclick="selectOption(this)"><input type="radio" name="c${idx}" value="${val}"><span>${(() => { const t = escapeHtml(opt); return /^[A-Fa-f][.、:：)）]/.test(t.trim()) ? t : val + '. ' + t; })()}</span></label>`;
+                            });
+                            html += `</div>`;
+                        } else if (type === 'multi') {
+                            html += `<div class="q-text"><span class="q-num">${idx+1}</span><span>${escapeHtml(q.question)}</span></div>`;
+                            html += `<div class="options">`;
+                            q.options.forEach((opt, oi) => {
+                                const val = String.fromCharCode(65 + oi);
+                                html += `<label class="option" onclick="toggleOption(this)"><input type="checkbox" name="m${idx}" value="${val}"><span>${(() => { const t = escapeHtml(opt); return /^[A-Fa-f][.、:：)）]/.test(t.trim()) ? t : val + '. ' + t; })()}</span></label>`;
+                            });
+                            html += `</div>`;
+                        } else if (type === 'fill') {
+                            const parts = q.question.split('_____');
+                            let qHtml = parts.map((part, pi) => {
+                                if (pi === parts.length - 1) return escapeHtml(part);
+                                return escapeHtml(part) + '<input type="text" class="blank-input" placeholder="填写答案">';
+                            }).join('');
+                            html += `<div class="q-text"><span class="q-num">${idx+1}</span><span>${qHtml}</span></div>`;
+                        } else if (type === 'dictation') {
+                            html += `<div class="q-text"><span class="q-num">${idx+1}</span><div style="flex:1;"><div style="font-weight:600;margin-bottom:4px;">${escapeHtml(q.title)}</div>${q.hint ? `<div style="font-size:13px;color:#999;">${escapeHtml(q.hint)}</div>` : ''}</div></div>`;
+                    html += `<div style="padding-left:34px;"><textarea class="text-area" rows="3" placeholder="在此默写..."></textarea></div>`;
+                } else if (type === 'reading') {
+                    html += `<div class="reading-passage">${escapeHtml(q.passage)}</div>`;
+                    q.questions.forEach((rq, ri) => {
+                        html += `<div class="reading-question">`;
+                        html += `<div class="q-text" style="margin-bottom:8px;"><span class="q-num">${ri+1}</span><span>${escapeHtml(rq.question)}</span></div>`;
+                        html += `<textarea class="text-area" rows="3" placeholder="在此作答..."></textarea>`;
+                        html += `</div>`;
+                    });
+                }
+                // 答案显示容器（初始隐藏）
+                html += `<div class="answer-display" id="ans-${type}-${idx}"></div>`;
+                html += `</div>`;
+            });
+            return html;
+        }
+
+        // ================================================================
+        // 10. 提交答案（显示正误与正确答案）
+        // ================================================================
+        function submitAnswers() {
+            const p = projects.find(x => x.id === currentProjectId);
+            if (!p) { showToast('请先选择项目'); return; }
+
+            // 先隐藏所有之前的答案显示
+            document.querySelectorAll('.answer-display').forEach(el => {
+                el.style.display = 'none';
+                el.className = 'answer-display';
+            });
+
+            let total = 0,
+                correct = 0;
+            const details = [];
+
+            const typeKeys = ['choice', 'multi', 'fill', 'dictation', 'reading'];
+            for (const type of typeKeys) {
+                const qList = p.questions[type] || [];
+                qList.forEach((q, idx) => {
+                    const cardId = `q-${type}-${idx}`;
+                    const answerDisplay = document.getElementById(`ans-${type}-${idx}`);
+                    if (!answerDisplay) return;
+
+                    total++;
+                    let isCorrect = false;
+                    let userAnswer = '';
+                    let correctAnswer = '';
+
+                    if (type === 'choice') {
+                        const radios = document.querySelectorAll(`#${cardId} input[name="c${idx}"]`);
+                        let selected = '';
+                        radios.forEach(r => { if (r.checked) selected = r.value; });
+                        userAnswer = selected || '未选';
+                        correctAnswer = q.answer || '';
+                        isCorrect = (selected === correctAnswer);
+                    } else if (type === 'multi') {
+                        const cbs = document.querySelectorAll(`#${cardId} input[name="m${idx}"]`);
+                        let selected = [];
+                        cbs.forEach(cb => { if (cb.checked) selected.push(cb.value); });
+                        userAnswer = selected.join('') || '未选';
+                        correctAnswer = q.answer || '';
+                        // 比较时都排序
+                        const userSorted = selected.slice().sort().join('');
+                        const expectedSorted = correctAnswer.split('').sort().join('');
+                        isCorrect = (userSorted === expectedSorted);
+                    } else if (type === 'fill') {
+                        const inputs = document.querySelectorAll(`#${cardId} .blank-input`);
+                        let answers = [];
+                        inputs.forEach(inp => answers.push(inp.value.trim()));
+                        userAnswer = answers.join(' / ') || '未填';
+                        correctAnswer = q.answer || '';
+                        const expectedParts = correctAnswer.split(',').map(s => s.trim());
+                        if (answers.length === expectedParts.length) {
+                            isCorrect = answers.every((a, i) => a === expectedParts[i]);
+                        } else {
+                            isCorrect = false;
+                        }
+                    } else {
+                        // 默写、阅读暂不自动批改，跳过
+                        return;
+                    }
+
+                    if (isCorrect) correct++;
+
+                    // 显示答案
+                    answerDisplay.style.display = 'block';
+                    answerDisplay.className = 'answer-display ' + (isCorrect ? 'correct' : 'wrong');
+                    answerDisplay.innerHTML = `
+                        ${isCorrect ? '✅ 正确' : '❌ 错误'} &nbsp;|&nbsp; 你的答案：${escapeHtml(userAnswer)} &nbsp;|&nbsp; 正确答案：${escapeHtml(correctAnswer)}
+                    `;
+
+                    details.push({ type, idx, userAnswer, correctAnswer, isCorrect });
+                });
+            }
+
+            // 弹窗统计
+            let msg = `总题数：${total}，正确：${correct}，正确率：${total > 0 ? Math.round(correct/total*100) : 0}%\n\n`;
+            details.forEach(d => {
+                const icon = d.isCorrect ? '✅' : '❌';
+                msg += `${icon} 第${d.idx+1}题（${d.type}）：你的答案 ${d.userAnswer} ${d.isCorrect ? '正确' : '错误'}\n`;
+            });
+            Swal.fire({
+                title: '📊 答题结果',
+                text: msg,
+                icon: correct === total ? 'success' : 'info',
+                confirmButtonText: '确定',
+                width: 600,
+            });
+        }
+
+        // ================================================================
+        // 11. 其他功能
+        // ================================================================
+        async function deleteQuestion(type, idx) {
+            const p = projects.find(x => x.id === currentProjectId);
+            if (!p) return;
+            p.questions[type].splice(idx, 1);
+            await persistProjects();
+            selectProject(currentProjectId);
+        }
+
+        function startRename(id) {
+            editingProjectId = id;
+            const p = projects.find(x => x.id === id);
+            document.getElementById('renameInput').value = p.name;
+            document.getElementById('renameModal').classList.add('show');
+            setTimeout(() => document.getElementById('renameInput').focus(), 100);
+        }
+
+        async function confirmRename() {
+            const name = document.getElementById('renameInput').value.trim();
+            if (!name) { showToast('名称不能为空'); return; }
+            const p = projects.find(x => x.id === editingProjectId);
+            if (p) { p.name = name;
+                await persistProjects();
+                renderProjectList(); }
+            closeModal('renameModal');
+        }
+
+        async function deleteProject(id) {
+            showConfirmDanger('删除项目', '确定要删除这个项目吗？所有题目将一并删除。', async function() {
+                try {
+                    localStorage.setItem('knowledge_furnace_projects_before_delete', JSON.stringify(projects));
+                } catch (e) {}
+
+                // 优先走后端单条删除接口；接口不可用再退回全量覆盖
+                let removedOnServer = false;
+                try {
+                    const resp = await fetch('/api/projects/' + encodeURIComponent(id), { method: 'DELETE' });
+                    const payload = await resp.json().catch(function() { return {}; });
+                    removedOnServer = resp.ok && payload.ok !== false;
+                } catch (e) {
+                    console.warn('删除项目接口异常，改走全量覆盖', e);
+                }
+
+                projects = projects.filter(p => p.id !== id);
+                if (!removedOnServer) await persistProjects();
+                renderProjectList();
+                if (currentProjectId === id) {
+                    currentProjectId = null;
+                    document.getElementById('contentInner').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📚</div>
+                            <h3>暂无项目</h3>
+                            <p>点击左侧「新建项目」开始创建</p>
+                        </div>
+                    `;
+                }
+            }, '删除');
+        }
+
+        async function exportProject() {
+            const p = projects.find(x => x.id === currentProjectId);
+            if (!p) { showToast('请先选择一个项目'); return; }
+            const data = JSON.stringify(p, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const filename = `${p.name}.json`;
+
+            let saved = false;
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: filename,
+                        types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    showToast('✅ 导出成功');
+                    saved = true;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    console.warn('保存对话框不可用，改用浏览器下载：', err && err.message);
+                }
+            }
+            if (!saved) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+                showToast('✅ 导出成功');
+            }
+        }
+
+        async function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.name || !data.questions) { showToast('文件格式不正确'); return; }
+                    data.id = Date.now();
+                    projects.push(data);
+                    persistProjects();
+                    renderProjectList();
+                    selectProject(data.id);
+                    showToast('✅ 导入成功！');
+                } catch (err) { showToast('文件解析失败'); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ================================================================
+        // 12. 通用工具
+        // ================================================================
+        function selectOption(el) {
+            el.parentElement.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('input').checked = true;
+        }
+
+        function toggleOption(el) {
+            el.classList.toggle('selected');
+            const cb = el.querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function showToast(msg) {
+            const el = document.getElementById('toastNotice');
+            if (!el) return;
+            el.innerText = msg;
+            el.classList.add('show');
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.remove('show'), 2500);
+        }
+
+        function showConfirm(title, message, onConfirm, okText, cancelText) {
+            document.getElementById('confirmTitle').innerText = title || '确认';
+            document.getElementById('confirmMessage').innerText = message || '';
+            const okBtn = document.getElementById('confirmOkBtn');
+            okBtn.innerText = okText || '确定';
+            okBtn.classList.remove('danger');
+            okBtn.classList.add('ok');
+            document.getElementById('confirmCancelBtn').innerText = cancelText || '取消';
+            okBtn.onclick = function() {
+                closeConfirmModal();
+                if (onConfirm) onConfirm();
+            };
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        function showConfirmDanger(title, message, onConfirm, okText, cancelText) {
+            showConfirm(title, message, onConfirm, okText, cancelText);
+            const okBtn = document.getElementById('confirmOkBtn');
+            okBtn.classList.remove('ok');
+            okBtn.classList.add('danger');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        // ================================================================
+        // 13. 侧边栏切换
+        // ================================================================
+        document.getElementById('toggleBtn').addEventListener('click', function() {
+            document.getElementById('zuoche').classList.toggle('hidden');
+            this.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(o => {
+            o.addEventListener('click', e => {
+                if (e.target === o) {
+                    if (o.id === 'createProjectModal') closeCreateModal();
+                    else if (o.id === 'noteSelectModal') closeNoteSelectModal();
+                    else o.classList.remove('show');
+                }
+            });
+        });
+
+        document.getElementById('projectNameInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') document.getElementById('qText')?.focus();
+        });
+        document.getElementById('renameInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') confirmRename();
+        });
+
+        // ================================================================
+        // 14. 数据变量
+        // ================================================================
+        let projects = [];
+        let currentProjectId = null;
+        let editingProjectId = null;
+        let tempQuestions = { choice: [], multi: [], fill: [], dictation: [], reading: [] };
+        let currentQType = 'choice';
+        let createMode = 'manual';
+        let optionCount = 2;
+        let readingQCount = 3;
+        let allNotes = [];
+        let selectedNoteId = null;
+
+        // ================================================================
+        // 15. 初始化
+        // ================================================================
+        async function init() {
+            const diskResult = await loadProjectsFromDisk();
+            if (diskResult.success && diskResult.count > 0) {
+                projects = diskResult.data;
+                currentProjectId = projects[0].id;
+                renderProjectList();
+                selectProject(currentProjectId);
+                console.log('✅ 知识炼炉数据已从后端加载');
+                return;
+            }
+
+            const storageResult = loadProjectsFromStorage();
+            if (storageResult.success && storageResult.count > 0) {
+                projects = storageResult.data;
+                currentProjectId = projects[0].id;
+                await persistProjects();
+                renderProjectList();
+                selectProject(currentProjectId);
+                console.log('✅ 从 localStorage 恢复知识炼炉数据，已同步到后端');
+                return;
+            }
+
+            projects = [];
+            currentProjectId = null;
+            renderProjectList();
+            document.getElementById('contentInner').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📚</div>
+                    <h3>暂无项目</h3>
+                    <p>点击左侧「新建项目」开始创建</p>
+                </div>
+            `;
+            console.log('📝 知识炼炉数据将保存在 data/cjiushuj/timu/cjiuh/projects.json');
+        }
+
+        window.addEventListener('beforeunload', function() {
+            try {
+                localStorage.setItem('knowledge_furnace_projects', JSON.stringify(projects));
+                localStorage.setItem('knowledge_furnace_projects_backup', JSON.stringify(projects));
+            } catch (e) {}
+        });
+
+        init();
+    </script>
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-box" style="width: 420px;">
+            <div class="modal-header">
+                <div class="modal-title" id="confirmTitle">确认</div>
+                <button class="modal-close" onclick="closeConfirmModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-message" id="confirmMessage"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn cancel" id="confirmCancelBtn" onclick="closeConfirmModal()">取消</button>
+                <button class="btn ok" id="confirmOkBtn">确定</button>
+            </div>
+        </div>
+    </div>
+    <div id="toastNotice" class="toast-notice"></div>
+</body>
+
+</html>

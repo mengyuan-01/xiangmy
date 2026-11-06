@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能笔记</title>
+
+<link rel="stylesheet" href="lib/quill.snow.css">
+<link rel="stylesheet" href="lib/atom-one-dark.min.css">
+<script>window.__libLoadErrors = [];</script>
+<script src="lib/highlight.min.js" onerror="window.__libLoadErrors.push('highlight.min.js')"></script>
+<script src="lib/quill.js" onerror="window.__libLoadErrors.push('quill.js')"></script>
+<script src="lib/sweetalert2.all.min.js" onerror="window.__libLoadErrors.push('sweetalert2.all.min.js')"></script>
+<script src="lib/html2pdf.bundle.min.js" onerror="window.__libLoadErrors.push('html2pdf.bundle.min.js')"></script>
+<script src="lib/FileSaver.min.js" onerror="window.__libLoadErrors.push('FileSaver.min.js')"></script>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; height: 100vh; overflow: hidden; color: #606266; }
+
+.header { position: fixed; top: 0; left: 0; right: 0; height: 56px; background: #ffffff; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.04); gap: 16px; }
+.header-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header-logo { display: flex; align-items: center; gap: 8px; color: #409eff; font-weight: 600; font-size: 16px; cursor: pointer; user-select: none; }
+.header-center { display: flex; align-items: center; justify-content: flex-start; gap: 10px; flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.header-center::-webkit-scrollbar { height: 0; display: none; }
+.header-center > .header-group:first-child { margin-left: auto; }
+.header-center > .header-group:last-child { margin-right: auto; }
+.header-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header-divider { width: 1px; height: 20px; background: #e4e7ed; flex-shrink: 0; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.toggle-btn { padding: 8px 14px; border: 1px solid #dcdfe6; border-radius: 6px; background: #ffffff; color: #606266; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.toggle-btn:hover { border-color: #409eff; color: #409eff; background: #ecf5ff; }
+.toggle-btn.active { background: #409eff; color: #ffffff; border-color: #409eff; }
+.toggle-btn.primary { background: #409eff; color: #fff; border-color: #409eff; }
+.toggle-btn.primary:hover { background: #66b1ff; border-color: #66b1ff; }
+.icon { width: 14px; height: 14px; flex-shrink: 0; }
+.header-nav-link { text-decoration: none; color: #606266; font-size: 14px; padding: 6px 10px; border-radius: 6px; transition: all .2s; white-space: nowrap; }
+.header-nav-link:hover { background: #f5f7fa; color: #409eff; }
+
+@media (max-width: 1400px) {
+    .toggle-btn { padding: 8px 12px; font-size: 13px; }
+    .header-nav-link { font-size: 13px; padding: 6px 8px; }
+    .header-center { gap: 8px; }
+    .header-group { gap: 6px; }
+}
+@media (max-width: 1200px) {
+    .header-nav-links, .header-divider { display: none; }
+}
+@media (max-width: 1000px) {
+    .header-center .toggle-btn { padding: 6px 9px; font-size: 0; gap: 0; }
+    .header-center .toggle-btn .icon { width: 16px; height: 16px; }
+}
+@media (max-width: 768px) {
+    .header { padding: 0 10px; gap: 10px; }
+    .toggle-btn { padding: 6px 10px; font-size: 12px; }
+}
+
+.layout-container { display: flex; height: 100vh; padding-top: 56px; }
+.sidebar { width: 260px; background: #ffffff; border-right: 1px solid #e4e7ed; display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
+.sidebar.collapsed { width: 0; border-right: none; }
+
+.sidebar-search { padding: 16px 16px 12px; border-bottom: 1px solid #ebeef5; flex-shrink: 0; }
+.search-box { position: relative; width: 100%; }
+.search-box input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid #dcdfe6; border-radius: 6px; background: #f5f7fa; color: #303133; font-size: 13px; outline: none; transition: all 0.2s; }
+.search-box input:focus { border-color: #409eff; background: #fff; }
+.search-box input::placeholder { color: #c0c4cc; }
+.search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: #909399; pointer-events: none; }
+
+.sidebar-actions { padding: 10px 16px; border-bottom: 1px solid #ebeef5; display: flex; align-items: center; justify-content: space-between; font-size: 12px; flex-shrink: 0; }
+.select-all-label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: #606266; }
+.select-all-label input[type="checkbox"] { width: 14px; height: 14px; accent-color: #409eff; cursor: pointer; }
+.action-btn { cursor: pointer; padding: 4px 8px; border-radius: 4px; color: #909399; font-size: 12px; transition: all 0.2s; }
+.action-btn:hover { background: #f5f7fa; color: #606266; }
+.action-btn.del:hover { background: #fef0f0; color: #f56c6c; }
+.action-btn.archive:hover { background: #ecf5ff; color: #409eff; }
+
+.note-list { flex: 1; overflow-y: auto; min-height: 0; padding: 6px 0; }
+.note-list::-webkit-scrollbar { width: 4px; }
+.note-list::-webkit-scrollbar-thumb { background: #e4e7ed; border-radius: 4px; }
+
+.note-item { padding: 10px 16px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; color: #606266; transition: background 0.15s; border-left: 3px solid transparent; }
+.note-item:hover { background: #f5f7fa; }
+.note-item.active { background: #ecf5ff; border-left-color: #409eff; }
+.note-item.active .note-title { color: #409eff; font-weight: 500; }
+.note-check { margin-top: 3px; accent-color: #409eff; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+.note-info { flex: 1; min-width: 0; }
+.note-title { font-size: 14px; font-weight: 500; color: #303133; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+.note-preview { font-size: 12px; color: #909399; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-time { font-size: 11px; color: #c0c4cc; margin-top: 2px; }
+.note-empty { padding: 60px 20px; text-align: center; color: #c0c4cc; font-size: 13px; }
+.note-remark-badge { display: inline-block; font-size: 11px; margin-left: 4px; color: #e6a23c; }
+.note-restore-btn { display: inline-block; font-size: 11px; font-weight: 400; margin-left: 8px; padding: 1px 8px; border-radius: 9px;
+  background: #409eff; color: #fff; cursor: pointer; vertical-align: 2px; }
+.note-restore-btn:hover { background: #337ecc; }
+
+.sidebar-expand-btn { position: fixed; left: 0; top: 72px; width: 20px; height: 50px; background: #ffffff; border: 1px solid #e4e7ed; border-left: none; border-radius: 0 6px 6px 0; cursor: pointer; display: none; align-items: center; justify-content: center; color: #909399; z-index: 50; transition: all 0.2s; }
+.sidebar-expand-btn:hover { background: #ecf5ff; color: #409eff; border-color: #b3d8ff; }
+.sidebar-expand-btn.visible { display: flex; }
+
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: #f5f7fa; }
+
+.editor-toolbar { height: 46px; padding: 0 16px; background: #ffffff; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; gap: 4px; flex-shrink: 0; overflow-x: auto; }
+.editor-toolbar::-webkit-scrollbar { height: 0; }
+
+.tool-btn { width: 30px; height: 30px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #606266; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; font-size: 13px; font-weight: 600; }
+.tool-btn:hover { background: #f5f7fa; color: #409eff; }
+.tool-btn.active { background: #ecf5ff; color: #409eff; border-color: #b3d8ff; }
+.tool-btn svg { width: 15px; height: 15px; }
+
+.tool-select { height: 30px; padding: 0 8px; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; color: #606266; font-size: 13px; cursor: pointer; outline: none; flex-shrink: 0; font-family: inherit; }
+.tool-select:hover { border-color: #409eff; }
+.tool-select:focus { border-color: #409eff; box-shadow: 0 0 0 2px rgba(64,158,255,0.1); }
+
+.tool-sep { width: 1px; height: 18px; background: #e4e7ed; margin: 0 4px; flex-shrink: 0; }
+
+.editor-body { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.editor-scroll { position: absolute; inset: 0; overflow-y: auto; padding: 24px 20px 40px; }
+.editor-scroll::-webkit-scrollbar { width: 8px; }
+.editor-scroll::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 4px; }
+
+.paper { max-width: 820px; margin: 0 auto; background: #ffffff; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06); min-height: calc(100% - 20px); overflow: hidden; }
+
+.paper-title-wrap { display: flex; align-items: center; gap: 10px; padding: 40px 60px 8px; }
+.paper-title { flex: 1; min-width: 0; border: none; outline: none; font-size: 26px; font-weight: 700; color: #1a1a2e; background: transparent; font-family: inherit; line-height: 1.4; }
+.paper-title::placeholder { color: #c0c4cc; font-weight: 400; }
+.save-dot { width: 8px; height: 8px; border-radius: 50%; background: #67c23a; flex-shrink: 0; transition: background 0.3s; }
+.save-dot.unsaved { background: #e6a23c; }
+.save-dot.saving { background: #409eff; animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.ql-container.ql-snow { border: none !important; font-family: inherit !important; font-size: 15px !important; }
+.ql-editor { padding: 8px 60px 60px !important; font-size: 15px !important; line-height: 1.85 !important; color: #303133 !important; font-family: inherit !important; min-height: 60vh; }
+.ql-editor.ql-blank::before { color: #c0c4cc; font-style: normal; left: 60px; right: 60px; }
+
+.ql-editor blockquote { margin: 0; padding: 6px 12px; border-left: 4px solid #409eff; background-color: #f5f7fa; color: #303133; border-radius: 0; font-style: normal; }
+.ql-editor blockquote.ql-bq-first { margin-top: 1em; border-top-right-radius: 6px; }
+.ql-editor blockquote.ql-bq-last { margin-bottom: 1em; border-bottom-right-radius: 6px; }
+.ql-editor blockquote blockquote { border-left-color: #67c23a; background-color: #f0f9eb; margin-left: 6px; border-radius: 0 6px 6px 0; }
+
+.ql-editor pre.ql-syntax { background: #1e293b !important; color: #e2e8f0 !important; padding: 16px 20px !important; border-radius: 6px !important; overflow-x: auto; font-family: 'Fira Code', 'Consolas', monospace !important; font-size: 13px !important; line-height: 1.6 !important; margin: 1em 0 !important; white-space: pre-wrap; word-wrap: break-word; }
+.ql-editor code { background: #f5f7fa; padding: 2px 6px; border-radius: 4px; color: #dc2626; font-size: 0.9em; font-family: 'Fira Code', 'Consolas', monospace; }
+.ql-editor img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+.ql-editor h1 { font-size: 24px; font-weight: 700; margin: 0.8em 0 0.5em; color: #1a1a2e; }
+.ql-editor h2 { font-size: 20px; font-weight: 700; margin: 0.7em 0 0.4em; color: #1a1a2e; }
+.ql-editor h3 { font-size: 17px; font-weight: 600; margin: 0.6em 0 0.3em; color: #1a1a2e; }
+.ql-editor ul, .ql-editor ol { padding-left: 1.8em; margin: 0.5em 0; }
+.ql-editor li { margin: 0.3em 0; }
+.ql-editor a { color: #409eff; text-decoration: none; }
+
+.preview-scroll { position: absolute; inset: 0; overflow-y: auto; padding: 24px 20px 40px; display: none; }
+.preview-scroll::-webkit-scrollbar { width: 8px; }
+.preview-scroll::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 4px; }
+.preview-scroll.active { display: block; }
+.editor-body.preview .editor-scroll { display: none; }
+
+.preview-paper { max-width: 820px; margin: 0 auto; background: #ffffff; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06); padding: 40px 60px 60px; min-height: calc(100% - 20px); }
+.preview-paper h1 { font-size: 26px; font-weight: 700; color: #1a1a2e; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #ebeef5; line-height: 1.4; }
+.preview-content { font-size: 15px; line-height: 1.85; color: #303133; }
+
+.preview-content h1 { font-size: 24px; font-weight: 700; margin: 0.8em 0 0.5em; color: #1a1a2e; }
+.preview-content h2 { font-size: 20px; font-weight: 700; margin: 0.7em 0 0.4em; color: #1a1a2e; }
+.preview-content h3 { font-size: 17px; font-weight: 600; margin: 0.6em 0 0.3em; color: #1a1a2e; }
+.preview-content ul, .preview-content ol { padding-left: 1.8em; margin: 0.5em 0; }
+.preview-content li { margin: 0.3em 0; }
+.preview-content a { color: #409eff; text-decoration: none; }
+.preview-content img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+
+.preview-content blockquote { margin: 0; padding: 6px 12px; border-left: 4px solid #409eff; background-color: #f5f7fa; border-radius: 0; }
+.preview-content blockquote.ql-bq-first { margin-top: 1em; border-top-right-radius: 6px; }
+.preview-content blockquote.ql-bq-last { margin-bottom: 1em; border-bottom-right-radius: 6px; }
+.preview-content pre { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-family: 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.6; margin: 1em 0; white-space: pre-wrap; }
+.preview-content pre code { background: transparent; padding: 0; color: inherit; font-size: inherit; }
+.preview-content code { background: #f5f7fa; padding: 2px 6px; border-radius: 4px; color: #dc2626; font-size: 0.9em; }
+
+.empty-state { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; color: #c0c4cc; gap: 16px; padding: 40px; background: #f5f7fa; z-index: 5; }
+.empty-state.visible { display: flex; }
+.empty-state-icon { font-size: 64px; opacity: 0.4; }
+.empty-state-text { font-size: 15px; color: #909399; }
+.empty-state-btn { padding: 10px 24px; background: #409eff; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; }
+.empty-state-btn:hover { background: #66b1ff; }
+.empty-state-hint { font-size: 12px; color: #c0c4cc; }
+
+.footer { height: 32px; padding: 0 20px; border-top: 1px solid #e4e7ed; background: #ffffff; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #909399; flex-shrink: 0; }
+.footer .save-status { color: #67c23a; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 2000; visibility: hidden; opacity: 0; transition: visibility 0.2s, opacity 0.2s; }
+.modal-overlay.active { visibility: visible; opacity: 1; }
+.modal-container { background: #ffffff; border-radius: 8px; width: 460px; max-width: 90%; box-shadow: 0 12px 40px rgba(0,0,0,0.18); transform: scale(0.96); transition: transform 0.2s; }
+.modal-overlay.active .modal-container { transform: scale(1); }
+.modal-header { padding: 16px 20px 12px; border-bottom: 1px solid #e4e7ed; display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { font-size: 16px; font-weight: 600; color: #303133; }
+.modal-close { width: 28px; height: 28px; background: transparent; border: none; color: #909399; font-size: 20px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.modal-close:hover { background: #f5f7fa; color: #303133; }
+.modal-body { padding: 18px 20px 6px; }
+.modal-footer { padding: 12px 20px 18px; display: flex; justify-content: flex-end; gap: 10px; }
+.remark-textarea { width: 100%; min-height: 140px; padding: 12px; border: 1px solid #dcdfe6; border-radius: 8px; background: #fff; color: #303133; font-family: inherit; font-size: 14px; resize: vertical; outline: none; transition: all 0.2s; }
+.remark-textarea:focus { border-color: #409eff; box-shadow: 0 0 0 3px rgba(64,158,255,0.1); }
+.btn-modal { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-modal.cancel { background: #f5f7fa; color: #606266; }
+.btn-modal.cancel:hover { background: #e4e7ed; }
+.btn-modal.ok { background: #409eff; color: #fff; }
+.btn-modal.ok:hover { background: #66b1ff; }
+
+/* 新建笔记弹窗的输入框 */
+.new-note-input { width: 100%; padding: 12px 14px; border: 1px solid #dcdfe6; border-radius: 8px; background: #fff; color: #303133; font-family: inherit; font-size: 14px; outline: none; transition: all 0.2s; box-sizing: border-box; }
+.new-note-input:focus { border-color: #409eff; box-shadow: 0 0 0 3px rgba(64,158,255,0.1); }
+.new-note-error { font-size: 12px; color: #f56c6c; min-height: 16px; margin-top: 6px; }
+
+.export-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.export-option { padding: 14px 16px; border: 1px solid #dcdfe6; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #606266; display: flex; align-items: center; gap: 10px; transition: all 0.2s; background: #fff; }
+.export-option:hover { border-color: #409eff; color: #409eff; background: #ecf5ff; }
+.export-option-icon { font-size: 20px; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #303133; color: white; padding: 10px 24px; border-radius: 20px; font-size: 13px; z-index: 3000; opacity: 0; transition: all 0.3s ease; pointer-events: none; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+.fatal-error { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 560px; padding: 24px 28px; background: #fef0f0; border: 1px solid #fbc4c4; border-radius: 10px; color: #b91c1c; font-size: 14px; line-height: 1.8; z-index: 9999; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+.fatal-error b { color: #7f1d1d; }
+
+/* ===== 窄窗口自适应：编辑器工具栏紧凑化，避免右侧按钮被裁切 ===== */
+@media (max-width: 1100px) {
+    .editor-toolbar { padding: 0 6px; gap: 0; }
+    .tool-btn { width: 26px; height: 26px; font-size: 11px; }
+    #fontSizeSelect { min-width: 50px; font-size: 11px; }
+}
+@media (max-width: 900px) {
+    .editor-toolbar { padding: 0 4px; }
+    .tool-btn { width: 24px; height: 24px; }
+    #fontSizeSelect { min-width: 46px; }
+}
+</style>
+<script>
+/* __FILE_FETCH_BRIDGE__ : file:// 打开时把 /api 请求转到本地应用服务，保证数据同步 */
+(function () {
+  if (location.protocol !== 'file:') return;
+  var origFetch = window.fetch ? window.fetch.bind(window) : null;
+  if (!origFetch) return;
+  var BASE = null;
+  var ready = new Promise(function (resolve) {
+    var ports = [5000, 5001, 5002, 5003, 5004];
+    var i = 0;
+    (function next() {
+      if (i >= ports.length) { resolve(null); return; }
+      var p = ports[i++];
+      origFetch('http://127.0.0.1:' + p + '/api/health', { cache: 'no-store' })
+        .then(function (r) { resolve(r.ok ? 'http://127.0.0.1:' + p : null); })
+        .catch(function () { next(); });
+    })();
+  });
+  window.fetch = function (input, init) {
+    if (typeof input === 'string' && input.charAt(0) === '/') {
+      return ready.then(function (base) {
+        return origFetch((base || 'http://127.0.0.1:5000') + input, init);
+      });
+    }
+    return origFetch(input, init);
+  };
+})();
+</script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <div class="header-logo" onclick="window.location.reload()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#409eff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span>智能笔记</span>
+        </div>
+    </div>
+    <div class="header-center">
+        <div class="header-group">
+            <button class="toggle-btn primary" id="btnNew" title="新建笔记">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                新建
+            </button>
+            <button class="toggle-btn" id="btnSave" title="保存 (Ctrl+S)">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                保存
+            </button>
+            <button class="toggle-btn" id="btnExport" title="导出">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                导出
+            </button>
+            <button class="toggle-btn" id="btnRemark" title="批注">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                批注
+            </button>
+            <button class="toggle-btn" id="btnPreview" title="切换预览">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                预览
+            </button>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-group header-nav-links">
+            <a href="ai_chat.html" class="header-nav-link">💬 AI聊天</a>
+            <a href="knowledge_furnace.html" class="header-nav-link">🔥 知识炼炉</a>
+            <a href="swdt.html" class="header-nav-link">🗺️ 思维导图</a>
+        </div>
+    </div>
+    <div class="header-right">
+        <button class="toggle-btn" id="btnToggleSidebar" title="收起侧边栏">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</header>
+
+<div class="layout-container">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-search">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="searchInput" placeholder="搜索笔记..." autocomplete="off">
+            </div>
+        </div>
+        <div class="sidebar-actions">
+            <label class="select-all-label">
+                <input type="checkbox" id="selectAll">
+                <span>全选</span>
+            </label>
+            <div>
+                <span class="action-btn archive" id="batchArchive" title="归档选中">归档</span>
+                <span class="action-btn del" id="batchDelete" title="删除选中">删除</span>
+                <span class="action-btn" id="toggleArchived" title="查看并恢复已归档的笔记">归档箱</span>
+            </div>
+        </div>
+        <div class="note-list" id="noteList"></div>
+    </aside>
+
+    <button class="sidebar-expand-btn" id="sidebarExpandBtn" title="展开侧边栏">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+
+    <main class="main-content">
+        <div class="editor-toolbar">
+            <select class="tool-select" id="fontSizeSelect" title="字号">
+                <option value="">字号</option>
+                <option value="12px">12</option>
+                <option value="14px">14</option>
+                <option value="16px">16</option>
+                <option value="18px">18</option>
+                <option value="20px">20</option>
+                <option value="24px">24</option>
+                <option value="28px">28</option>
+            </select>
+            <div class="tool-sep"></div>
+            <button class="tool-btn" id="btnBold" title="加粗"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg></button>
+            <button class="tool-btn" id="btnItalic" title="斜体"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg></button>
+            <button class="tool-btn" id="btnUnderline" title="下划线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg></button>
+            <button class="tool-btn" id="btnStrike" title="删除线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"></line><path d="M16 6C16 6 15 4 12 4C9 4 7 6 7 8C7 10 9 11 12 12"></path><path d="M8 18C8 18 9 20 12 20C15 20 17 18 17 16C17 14 16 13 12 12"></path></svg></button>
+            <div class="tool-sep"></div>
+            <button class="tool-btn" id="btnAlignLeft" title="左对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg></button>
+            <button class="tool-btn" id="btnAlignCenter" title="居中"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg></button>
+            <button class="tool-btn" id="btnAlignRight" title="右对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg></button>
+            <div class="tool-sep"></div>
+            <button class="tool-btn" id="btnBullet" title="无序列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><circle cx="4.5" cy="6" r="1" fill="currentColor"></circle><circle cx="4.5" cy="12" r="1" fill="currentColor"></circle><circle cx="4.5" cy="18" r="1" fill="currentColor"></circle></svg></button>
+            <button class="tool-btn" id="btnOrdered" title="有序列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg></button>
+            <div class="tool-sep"></div>
+            <button class="tool-btn" id="btnBlockquote" title="引用"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg></button>
+            <button class="tool-btn" id="btnCodeBlock" title="代码块"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></button>
+            <button class="tool-btn" id="btnLink" title="插入链接"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></button>
+            <button class="tool-btn" id="btnImage" title="插入图片"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
+            <div class="tool-sep"></div>
+            <button class="tool-btn" id="btnClean" title="清除格式"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6"></path></svg></button>
+        </div>
+
+        <div class="editor-body" id="editorBody">
+            <div class="editor-scroll" id="editorScroll">
+                <div class="paper">
+                    <div class="paper-title-wrap">
+                        <input type="text" class="paper-title" id="noteTitle" placeholder="无标题笔记">
+                        <span class="save-dot" id="saveDot" title="已保存"></span>
+                    </div>
+                    <div id="quillEditor"></div>
+                </div>
+            </div>
+
+            <div class="preview-scroll" id="previewScroll">
+                <div class="preview-paper">
+                    <h1 id="previewTitle">无标题笔记</h1>
+                    <div class="preview-content" id="previewContent"></div>
+                </div>
+            </div>
+
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">📝</div>
+                <div class="empty-state-text">还没有笔记</div>
+                <button class="empty-state-btn" id="emptyStateNewBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    新建第一篇笔记
+                </button>
+                <div class="empty-state-hint">或者点击顶部「新建」按钮</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span>📅 更新: <span id="updateTimeDisplay">--</span></span>
+            <span>📝 字数: <span id="wordCount">0</span></span>
+            <span class="save-status" id="autoSaveStatus">💾 自动保存中...</span>
+        </div>
+    </main>
+</div>
+
+<!-- 新建笔记弹窗（自定义 div，跟批注弹窗同款结构） -->
+<div id="newNoteModal" class="modal-overlay">
+    <div class="modal-container" style="width: 420px;">
+        <div class="modal-header">
+            <h3>新建笔记</h3>
+            <button class="modal-close" id="closeNewNoteBtn" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label style="display:block;font-size:13px;color:#606266;margin-bottom:8px;">笔记标题</label>
+            <input type="text" id="newNoteTitleInput" class="new-note-input" placeholder="输入笔记标题" autocomplete="off">
+            <div id="newNoteError" class="new-note-error"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal cancel" id="cancelNewNoteBtn" type="button">取消</button>
+            <button class="btn-modal ok" id="confirmNewNoteBtn" type="button">创建</button>
+        </div>
+    </div>
+</div>
+
+<div id="remarkModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>✏️ 笔记批注</h3>
+            <button class="modal-close" id="closeRemarkBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <textarea id="remarkTextarea" class="remark-textarea" placeholder="写下你的批注..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal cancel" id="cancelRemarkBtn">取消</button>
+            <button class="btn-modal ok" id="saveRemarkBtn">保存批注</button>
+        </div>
+    </div>
+</div>
+
+<div id="exportModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>📤 导出笔记</h3>
+            <button class="modal-close" id="closeExportBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="export-options">
+                <div class="export-option" data-format="pdf"><span class="export-option-icon">📕</span> PDF</div>
+                <div class="export-option" data-format="word"><span class="export-option-icon">📘</span> Word</div>
+                <div class="export-option" data-format="html"><span class="export-option-icon">🌐</span> HTML</div>
+                <div class="export-option" data-format="txt"><span class="export-option-icon">📄</span> 纯文本</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal cancel" id="cancelExportBtn">取消</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+console.log('📄 [note_fixed] 脚本开始执行');
+
+// ================================================================
+// 本地 UI 状态
+// ================================================================
+const UI = {
+    get(key, defaultValue) { try { const v = localStorage.getItem(key); return v === null ? defaultValue : v; } catch (e) { return defaultValue; } },
+    set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+};
+
+const PREF = {
+    sidebarCollapsed: UI.get('note_sidebar_collapsed', '0') === '1',
+    previewMode: UI.get('note_preview_mode', '0') === '1'
+};
+
+// ================================================================
+// 数据层
+// ================================================================
+const db = {
+    isPyWebview() { return !!(window.pywebview && window.pywebview.api); },
+    isFileProtocol() { return location.protocol === 'file:'; },
+
+    async loadNotes(status) {
+        const st = status || 'normal';
+        if (this.isPyWebview()) {
+            try {
+                const r = await window.pywebview.api.load_notes();
+                return Array.isArray(r) ? r : [];
+            } catch (e) { console.error('❌ db.loadNotes 失败:', e); return []; }
+        }
+        try {
+            const url = st === 'archived' ? '/api/notes?status=archived' : '/api/notes';
+            const r = await fetch(url);
+            return await r.json();
+        } catch (e) { return []; }
+    },
+
+    async loadNoteContent(filename) {
+        if (this.isPyWebview()) {
+            try { const r = await window.pywebview.api.load_note_content(filename); return (r && r.content) || ''; }
+            catch (e) { return ''; }
+        }
+        try { const r = await fetch(`/api/notes/${encodeURIComponent(filename)}`); const d = await r.json(); return d.content || ''; } catch (e) { return ''; }
+    },
+
+    async createNote(title, content) {
+        if (this.isPyWebview()) {
+            try { return await window.pywebview.api.create_note(title, content || ''); }
+            catch (e) { return { ok: false, error: String(e) }; }
+        }
+        try { const r = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content }) }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; }
+    },
+
+    async updateNote(filename, title, content, remark) {
+        if (this.isPyWebview()) {
+            try { return await window.pywebview.api.update_note(filename, title, content, remark); }
+            catch (e) { return { ok: false, error: String(e) }; }
+        }
+        try { const r = await fetch(`/api/notes/${encodeURIComponent(filename)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content, remark }) }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; }
+    },
+
+    async deleteNote(filename) {
+        if (this.isPyWebview()) {
+            try { return await window.pywebview.api.delete_note(filename); }
+            catch (e) { return { ok: false, error: String(e) }; }
+        }
+        try { const r = await fetch(`/api/notes/${encodeURIComponent(filename)}`, { method: 'DELETE' }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; }
+    },
+
+    async archiveNote(filename) {
+        if (this.isPyWebview()) {
+            try { return await window.pywebview.api.archive_note(filename); }
+            catch (e) { return { ok: false, error: String(e) }; }
+        }
+        try { const r = await fetch(`/api/notes/archive/${encodeURIComponent(filename)}`, { method: 'POST' }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; }
+    }
+};
+
+// ================================================================
+// 全局状态
+// ================================================================
+let notes = [];
+let currentNoteId = null;
+let searchKeyword = "";
+let saveTimer = null;
+let showingArchived = false;
+
+let _savingPromise = null;
+let _pendingSave = false;
+let _lastSavedContent = '';
+let _lastSavedTitle = '';
+let _lastSavedFilename = '';
+let _lastBqCount = -1;
+
+let isPreviewMode = PREF.previewMode;
+
+const titleInput = document.getElementById('noteTitle');
+const previewContent = document.getElementById('previewContent');
+const previewTitle = document.getElementById('previewTitle');
+const toastEl = document.getElementById('toast');
+const autoSaveStatus = document.getElementById('autoSaveStatus');
+const saveDot = document.getElementById('saveDot');
+
+// 【弹窗焦点】与批注弹窗同款策略：只聚焦弹窗内输入框，绝不操作 Quill 的
+// contenteditable/disable/focus。在 pywebview(WebKitGTK) 下，对"已聚焦"的
+// 编辑器执行 disable / 改 contenteditable 会把焦点卡死在编辑器上，导致
+// 之后 input.focus() 全部失效（批注弹窗从不碰 Quill，所以一直正常）。
+let _modalFocusTimer = null;      // 弹窗打开后的首次聚焦定时器
+let _modalFocusRetryTimer = null; // 首次聚焦后的复核补焦定时器
+
+// ================================================================
+// 工具
+// ================================================================
+function getNow() { return new Date().toLocaleString('zh-CN'); }
+
+function getLocalDateTimeString() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ` +
+           `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2500);
+}
+
+function stripHtml(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html || '';
+    return (div.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function formatTime(ts) {
+    if (!ts) return '';
+    let d;
+    const s = String(ts);
+    if (/[zZ]$/.test(s) || /[+-]\d{2}:?\d{2}$/.test(s)) {
+        d = new Date(s);
+    } else {
+        d = new Date(s.replace(' ', 'T'));
+    }
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return '刚刚';
+    if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+    if (diff < 86400 * 7) return Math.floor(diff / 86400) + ' 天前';
+    return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function setSaveState(state) {
+    saveDot.classList.remove('unsaved', 'saving');
+    if (state === 'unsaved') { saveDot.classList.add('unsaved'); saveDot.title = '未保存'; }
+    else if (state === 'saving') { saveDot.classList.add('saving'); saveDot.title = '保存中...'; }
+    else { saveDot.title = '已保存'; }
+}
+
+async function waitForBackend(maxMs = 3000) {
+    if (db.isPyWebview()) return true;
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+        if (db.isPyWebview()) return true;
+        // 浏览器以 file:// 直接打开时，后端走本地 HTTP 服务（由页面内接口桥转发）
+        try {
+            const r = await fetch('/api/health', { cache: 'no-store' });
+            if (r && r.ok) return true;
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 400));
+    }
+    return db.isPyWebview();
+}
+
+async function askConfirm(opts) {
+    try {
+        if (typeof Swal !== 'undefined' && Swal && typeof Swal.fire === 'function') {
+            return await Swal.fire({
+                title: opts.title || '确认',
+                text: opts.text || '',
+                icon: opts.icon || 'question',
+                showCancelButton: true,
+                confirmButtonText: opts.confirmButtonText || '确定',
+                cancelButtonText: opts.cancelButtonText || '取消',
+                confirmButtonColor: opts.confirmButtonColor || '#409eff',
+                cancelButtonColor: opts.cancelButtonColor || '#909399'
+            });
+        }
+    } catch (e) { console.warn('Swal 失败'); }
+    const text = (opts.title ? opts.title + '\n\n' : '') + (opts.text || '');
+    return { isConfirmed: window.confirm(text) };
+}
+
+// ================================================================
+// Quill 初始化
+// ================================================================
+function fatalError(msg) {
+    const div = document.createElement('div');
+    div.className = 'fatal-error';
+    div.innerHTML = '<b>⚠️ 页面初始化失败</b><br>' + msg;
+    document.body.appendChild(div);
+}
+
+if (window.__libLoadErrors && window.__libLoadErrors.length > 0) {
+    fatalError('以下库文件加载失败：<b>' + window.__libLoadErrors.join('、') + '</b>');
+    throw new Error('第三方库加载失败: ' + window.__libLoadErrors.join(','));
+}
+if (typeof Quill === 'undefined') { fatalError('Quill 未加载成功'); throw new Error('Quill is not defined'); }
+if (Quill.version && !Quill.version.startsWith('1.')) {
+    fatalError('<b>lib/quill.js</b> 版本不兼容：需要 Quill 1.3.7，当前 ' + Quill.version);
+    throw new Error('Quill 版本不兼容: ' + Quill.version);
+}
+if (typeof hljs === 'undefined') { fatalError('highlight.js 未加载成功'); throw new Error('hljs is not defined'); }
+
+console.log('📝 初始化 Quill...');
+let quill;
+try {
+    const SizeStyle = Quill.import('attributors/style/size');
+    SizeStyle.whitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px'];
+    Quill.register(SizeStyle, true);
+
+    quill = new Quill('#quillEditor', {
+        theme: 'snow',
+        placeholder: '开始书写...',
+        modules: {
+            toolbar: false,
+            syntax: { highlight: (text) => hljs.highlightAuto(text).value },
+            history: { delay: 500, maxStack: 200, userOnly: true }
+        }
+    });
+    window.quill = quill;
+} catch (e) {
+    fatalError('编辑器初始化失败：<b>' + e.message + '</b>');
+    throw e;
+}
+console.log('✅ Quill 已创建');
+
+// ============================================================
+// blockquote 装饰
+// ============================================================
+function decorateBlockquotes(force = false) {
+    const editorBlocks = quill.root.querySelectorAll('blockquote');
+    const previewBlocks = previewContent ? previewContent.querySelectorAll('blockquote') : [];
+    const total = editorBlocks.length + previewBlocks.length;
+    if (!force && total === _lastBqCount && total === 0) return;
+    _lastBqCount = total;
+
+    const applyDecor = (bq, list) => {
+        bq.classList.remove('ql-bq-first', 'ql-bq-last');
+        const idx = Array.prototype.indexOf.call(list, bq);
+        const prev = list[idx - 1];
+        const next = list[idx + 1];
+        const prevIsBq = prev && prev.tagName === 'BLOCKQUOTE';
+        const nextIsBq = next && next.tagName === 'BLOCKQUOTE';
+        if (!prevIsBq) bq.classList.add('ql-bq-first');
+        if (!nextIsBq) bq.classList.add('ql-bq-last');
+    };
+
+    editorBlocks.forEach(bq => {
+        const siblings = bq.parentElement ? bq.parentElement.querySelectorAll(':scope > blockquote') : [bq];
+        applyDecor(bq, siblings);
+    });
+    previewBlocks.forEach(bq => {
+        const siblings = bq.parentElement ? bq.parentElement.querySelectorAll(':scope > blockquote') : [bq];
+        applyDecor(bq, siblings);
+    });
+}
+
+// ============================================================
+// 引用块 / 代码块：连续两次回车退出
+// ============================================================
+function setupBlockExitOnDoubleEnter(quill) {
+    const INTERVAL = 300;
+    let lastEnterTime = 0;
+    let lastBlockType = null;
+
+    function detectBlockType() {
+        try {
+            const range = quill.getSelection();
+            if (range) {
+                const fmt = quill.getFormat(range.index);
+                if (fmt && fmt['code-block']) return 'code-block';
+                if (fmt && fmt['blockquote']) return 'blockquote';
+            }
+        } catch (e) {}
+        try {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                let node = sel.anchorNode;
+                while (node && node !== quill.root) {
+                    if (node.nodeType === 1) {
+                        const tag = node.tagName;
+                        if (tag === 'PRE') return 'code-block';
+                        if (tag === 'BLOCKQUOTE') return 'blockquote';
+                    }
+                    node = node.parentNode;
+                }
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    function exitBlock(blockType) {
+        quill.format(blockType, false, Quill.sources.USER);
+        setTimeout(() => {
+            if (typeof updateToolbarState === 'function') updateToolbarState();
+            decorateBlockquotes(true);
+        }, 0);
+    }
+
+    quill.root.addEventListener('keydown', function(e) {
+        const isEnter = (e.key === 'Enter' || e.keyCode === 13 || e.which === 13);
+        if (!isEnter) return;
+        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+        if (e.isComposing) return;
+
+        const blockType = detectBlockType();
+        if (!blockType) { lastEnterTime = 0; lastBlockType = null; return; }
+
+        const now = Date.now();
+        const isDouble = (lastBlockType === blockType) && ((now - lastEnterTime) < INTERVAL);
+
+        if (isDouble) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            exitBlock(blockType);
+            lastEnterTime = 0;
+            lastBlockType = null;
+            return;
+        }
+
+        lastEnterTime = now;
+        lastBlockType = blockType;
+    }, true);
+}
+
+setupBlockExitOnDoubleEnter(quill);
+
+// ================================================================
+// 工具栏绑定
+// ================================================================
+function bindToolbar() {
+    document.querySelectorAll('.editor-toolbar .tool-btn').forEach(btn => {
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+    });
+
+    function fmt(name, value) {
+        quill.focus();
+        const cur = quill.getFormat();
+        if (typeof value === 'boolean') quill.format(name, cur[name] ? false : value);
+        else quill.format(name, value);
+    }
+    document.getElementById('btnBold').addEventListener('click', () => fmt('bold', true));
+    document.getElementById('btnItalic').addEventListener('click', () => fmt('italic', true));
+    document.getElementById('btnUnderline').addEventListener('click', () => fmt('underline', true));
+    document.getElementById('btnStrike').addEventListener('click', () => fmt('strike', true));
+    // ---- 行级格式（对齐 / 列表 / 引用）：只作用于光标所在的那一行 ----
+    // 之前直接用 quill.format() 时，如果选区覆盖了多行甚至整篇，会把整篇一起改掉；
+    // 这里统一用 formatLine 锁定「当前段落」，即使整篇被选中也只改光标所在那一行。
+    function currentLineInfo() {
+        const sel = quill.getSelection(true) || { index: 0, length: 0 };
+        let idx = sel.index;
+        const max = Math.max(0, quill.getLength() - 2);
+        if (idx > max) idx = max;
+        const line = quill.getLine(idx)[0];
+        const lineIndex = quill.getIndex(line);
+        return { index: lineIndex, format: quill.getFormat(lineIndex, 1) };
+    }
+    function fmtLine(name, value) {
+        quill.focus();
+        const L = currentLineInfo();
+        quill.formatLine(L.index, 1, name, value, 'user');
+    }
+    document.getElementById('btnAlignLeft').addEventListener('click', () => fmtLine('align', false));
+    document.getElementById('btnAlignCenter').addEventListener('click', () => fmtLine('align', 'center'));
+    document.getElementById('btnAlignRight').addEventListener('click', () => fmtLine('align', 'right'));
+    document.getElementById('btnBullet').addEventListener('click', () => { const L = currentLineInfo(); fmtLine('list', L.format.list === 'bullet' ? false : 'bullet'); });
+    document.getElementById('btnOrdered').addEventListener('click', () => { const L = currentLineInfo(); fmtLine('list', L.format.list === 'ordered' ? false : 'ordered'); });
+    document.getElementById('btnBlockquote').addEventListener('click', () => { const L = currentLineInfo(); fmtLine('blockquote', !L.format.blockquote); });
+    document.getElementById('btnCodeBlock').addEventListener('click', () => {
+        // 同样只作用于光标所在这一行，不受整篇选区影响
+        const L = currentLineInfo();
+        fmtLine('code-block', !L.format['code-block']);
+    });
+    document.getElementById('btnLink').addEventListener('click', async () => {
+        const range = quill.getSelection(true);
+        if (!range) return;
+        const cur = quill.getFormat().link || '';
+        let url = null;
+        if (typeof Swal !== 'undefined' && Swal && typeof Swal.fire === 'function') {
+            const res = await Swal.fire({
+                title: '插入链接',
+                input: 'url',
+                inputValue: cur,
+                inputPlaceholder: 'https://example.com',
+                showCancelButton: true,
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                confirmButtonColor: '#409eff',
+                cancelButtonColor: '#909399'
+            });
+            if (!res.isConfirmed) return;
+            url = (res.value || '').trim();
+        } else {
+            url = prompt('输入链接地址:', cur);
+            if (url === null) return;
+            url = url.trim();
+        }
+        quill.setSelection(range.index, range.length || 0);
+        if (url === '') quill.format('link', false);
+        else quill.format('link', url);
+    });
+    document.getElementById('btnImage').addEventListener('click', () => {
+        const input = document.getElementById('noteImageInput');
+        if (input) input.click();
+    });
+    // 图片 input 在 script 之后，这里用事件委托，避免绑定时机早于元素解析
+    document.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!t || t.id !== 'noteImageInput') return;
+        const file = t.files && t.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const range = quill.getSelection(true) || { index: quill.getLength() };
+            quill.insertEmbed(range.index, 'image', reader.result);
+            quill.setSelection(range.index + 1);
+        };
+        reader.readAsDataURL(file);
+        t.value = '';
+    });
+    document.getElementById('btnClean').addEventListener('click', () => {
+        quill.focus();
+        const range = quill.getSelection(true);
+        if (!range || range.length === 0) {
+            ['bold','italic','underline','strike','blockquote','code-block','link','size','align','list'].forEach(f => quill.format(f, false));
+        } else {
+            quill.removeFormat(range.index, range.length);
+        }
+    });
+    document.getElementById('fontSizeSelect').addEventListener('change', (e) => {
+        quill.focus();
+        if (e.target.value) quill.format('size', e.target.value);
+        else quill.format('size', false);
+    });
+}
+
+function updateToolbarState() {
+    if (isPreviewMode) return;
+    const f = quill.getFormat();
+    document.getElementById('btnBold').classList.toggle('active', !!f.bold);
+    document.getElementById('btnItalic').classList.toggle('active', !!f.italic);
+    document.getElementById('btnUnderline').classList.toggle('active', !!f.underline);
+    document.getElementById('btnStrike').classList.toggle('active', !!f.strike);
+    document.getElementById('btnBlockquote').classList.toggle('active', !!f.blockquote);
+    document.getElementById('btnCodeBlock').classList.toggle('active', !!f['code-block']);
+    document.getElementById('btnBullet').classList.toggle('active', f.list === 'bullet');
+    document.getElementById('btnOrdered').classList.toggle('active', f.list === 'ordered');
+    document.getElementById('btnAlignLeft').classList.toggle('active', !f.align || f.align === '' || f.align === false);
+    document.getElementById('btnAlignCenter').classList.toggle('active', f.align === 'center');
+    document.getElementById('btnAlignRight').classList.toggle('active', f.align === 'right');
+    document.getElementById('fontSizeSelect').value = f.size || '';
+}
+
+quill.on('selection-change', updateToolbarState);
+quill.on('text-change', (delta, oldDelta, source) => {
+    updateToolbarState();
+    if (isPreviewMode) updatePreview();
+    updateWordCount();
+    decorateBlockquotes();
+    if (source === 'user') {
+        markUnsaved();
+        scheduleSave();
+    }
+});
+
+// ================================================================
+// 列表渲染
+// ================================================================
+function getDisplayNotes() {
+    if (!searchKeyword.trim()) return notes;
+    const kw = searchKeyword.trim().toLowerCase();
+    return notes.filter(n =>
+        (n.title || '').toLowerCase().includes(kw) ||
+        (n.preview || '').toLowerCase().includes(kw)
+    );
+}
+
+function renderList() {
+    const container = document.getElementById('noteList');
+    const displayNotes = getDisplayNotes();
+    if (displayNotes.length === 0) {
+        container.innerHTML = '<div class="note-empty">' + (notes.length === 0 ? '📝 暂无笔记' : '未找到匹配的笔记') + '</div>';
+        document.getElementById('selectAll').checked = false;
+        updateEmptyState();
+        return;
+    }
+    let html = '';
+    displayNotes.forEach(note => {
+        const activeClass = (note.filename === currentNoteId) ? 'active' : '';
+        const timeStr = formatTime(note.updated_at || note.updatedAt);
+        const rawPreview = stripHtml(note.preview || '');
+        const previewText = rawPreview ? rawPreview.slice(0, 60) : '空笔记';
+        const remarkBadge = note.remark ? '<span class="note-remark-badge" title="有批注">📌</span>' : '';
+        const restoreBtn = showingArchived
+            ? `<span class="note-restore-btn" data-restore="${escapeHtml(note.filename)}" title="恢复这篇笔记">恢复</span>`
+            : '';
+        html += `<div class="note-item ${activeClass}" data-filename="${escapeHtml(note.filename)}">
+            <input type="checkbox" class="note-check" data-check="${escapeHtml(note.filename)}">
+            <div class="note-info">
+                <div class="note-title">${escapeHtml(note.title || '无标题')}${remarkBadge}${restoreBtn}</div>
+                <div class="note-preview">${escapeHtml(previewText)}</div>
+                ${timeStr ? `<div class="note-time">${timeStr}</div>` : ''}
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+
+    container.querySelectorAll('.note-item').forEach(el => {
+        el.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('note-check')) return;
+            const restoreEl = e.target.closest ? e.target.closest('.note-restore-btn') : null;
+            if (restoreEl) {
+                e.preventDefault();
+                e.stopPropagation();
+                await restoreNote(restoreEl.dataset.restore);
+                return;
+            }
+            const filename = el.dataset.filename;
+            if (filename === currentNoteId) return;
+            await saveCurrentNote(true);
+            await openNote(filename);
+        });
+    });
+    container.querySelectorAll('.note-check').forEach(cb => {
+        cb.addEventListener('change', syncSelectAll);
+    });
+    syncSelectAll();
+    updateEmptyState();
+}
+
+function updateListItemInPlace(note) {
+    if (!note) return;
+    const container = document.getElementById('noteList');
+    if (!container) return;
+    const esc = (window.CSS && CSS.escape) ? CSS.escape(note.filename) : note.filename.replace(/["\\]/g, '\\$&');
+    const item = container.querySelector(`.note-item[data-filename="${esc}"]`);
+    if (!item) return;
+
+    const titleEl = item.querySelector('.note-title');
+    if (titleEl) {
+        const remarkBadge = note.remark ? '<span class="note-remark-badge" title="有批注">📌</span>' : '';
+        titleEl.innerHTML = escapeHtml(note.title || '无标题') + remarkBadge;
+    }
+    const previewEl = item.querySelector('.note-preview');
+    if (previewEl) {
+        const rawPreview = stripHtml(note.preview || '');
+        previewEl.textContent = rawPreview ? rawPreview.slice(0, 60) : '空笔记';
+    }
+}
+
+function updateEmptyState() {
+    const emptyState = document.getElementById('emptyState');
+    if (notes.length === 0 && !currentNoteId) emptyState.classList.add('visible');
+    else emptyState.classList.remove('visible');
+}
+
+function syncSelectAll() {
+    const all = document.querySelectorAll('.note-check');
+    const checked = document.querySelectorAll('.note-check:checked');
+    document.getElementById('selectAll').checked = all.length > 0 && all.length === checked.length;
+}
+
+function getSelectedFilenames() {
+    return Array.from(document.querySelectorAll('.note-check:checked')).map(cb => cb.dataset.check);
+}
+
+// ================================================================
+// 编辑区状态
+// ================================================================
+function updateWordCount() {
+    const text = quill.getText() || '';
+    document.getElementById('wordCount').innerText = text.trim().length;
+}
+
+function updatePreview() {
+    previewTitle.textContent = titleInput.value || '无标题笔记';
+    previewContent.innerHTML = quill.root.innerHTML;
+    decorateBlockquotes(true);
+}
+
+function markUnsaved() {
+    if (!currentNoteId) return;
+    setSaveState('unsaved');
+    autoSaveStatus.textContent = '📝 编辑中...';
+    autoSaveStatus.style.color = '#e6a23c';
+}
+
+function markSaved() {
+    setSaveState('saved');
+    autoSaveStatus.textContent = '✅ 已保存';
+    autoSaveStatus.style.color = '#67c23a';
+    setTimeout(() => {
+        if (autoSaveStatus.textContent === '✅ 已保存') {
+            autoSaveStatus.textContent = '💾 自动保存中...';
+            autoSaveStatus.style.color = '#909399';
+        }
+    }, 1500);
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { saveCurrentNote(false); }, 300);
+}
+
+// ================================================================
+// 保存
+// ================================================================
+function saveCurrentNote(immediate = false) {
+    if (!currentNoteId) return Promise.resolve(false);
+
+    const filenameToSave = currentNoteId;
+    const content = quill.root.innerHTML;
+    const title = titleInput.value || '未命名';
+
+    if (filenameToSave === _lastSavedFilename &&
+        content === _lastSavedContent &&
+        title === _lastSavedTitle) {
+        return Promise.resolve(true);
+    }
+
+    if (_savingPromise) {
+        _pendingSave = true;
+        if (immediate) return _savingPromise.then(() => saveCurrentNote(true));
+        return _savingPromise;
+    }
+
+    const preview = stripHtml(content);
+    setSaveState('saving');
+
+    const note = notes.find(n => n.filename === filenameToSave);
+    if (note) {
+        note.title = title;
+        note.preview = preview;
+        note.updated_at = getLocalDateTimeString();
+    }
+
+    _savingPromise = (async () => {
+        try {
+            const r = await db.updateNote(filenameToSave, title, content, null);
+            if (r && r.ok) {
+                _lastSavedContent = content;
+                _lastSavedTitle = title;
+                _lastSavedFilename = filenameToSave;
+                document.getElementById('updateTimeDisplay').innerText = getNow();
+                markSaved();
+                if (note) updateListItemInPlace(note);
+                return true;
+            } else {
+                showToast('❌ 保存失败: ' + (r && r.error || '未知'));
+                setSaveState('unsaved');
+                return false;
+            }
+        } catch (err) {
+            showToast('❌ 保存失败: ' + err.message);
+            setSaveState('unsaved');
+            return false;
+        } finally {
+            _savingPromise = null;
+            if (_pendingSave) {
+                _pendingSave = false;
+                setTimeout(() => saveCurrentNote(false), 0);
+            }
+        }
+    })();
+
+    return _savingPromise;
+}
+
+// ================================================================
+// 打开
+// ================================================================
+async function openNote(filename) {
+    try {
+        const content = await db.loadNoteContent(filename);
+        const note = notes.find(n => n.filename === filename);
+        if (!note) { showToast('❌ 笔记不存在'); return; }
+        currentNoteId = filename;
+        titleInput.value = note.title || '无标题';
+
+        quill.setContents([], 'silent');
+        // 用 convert + setContents 代替 dangerouslyPasteHTML：
+        // dangerouslyPasteHTML 有已知的"抢焦点"行为（Quill 1.3.x issue #2097），
+        // 会强制把 DOM 焦点放回编辑器，是弹窗输入框失焦的重要诱因。
+        const delta = quill.clipboard.convert(content || '');
+        quill.setContents(delta, 'silent');
+        quill.history.clear();
+
+        _lastSavedFilename = filename;
+        _lastSavedContent = content || '';
+        _lastSavedTitle = note.title || '无标题';
+        _pendingSave = false;
+
+        document.getElementById('updateTimeDisplay').innerText = getNow();
+        updateWordCount();
+        _lastBqCount = -1;
+        decorateBlockquotes(true);
+        if (isPreviewMode) updatePreview();
+        renderList();
+        document.title = (note.title || '无标题') + ' - 智能笔记';
+        setSaveState('saved');
+        autoSaveStatus.textContent = '💾 自动保存中...';
+        autoSaveStatus.style.color = '#909399';
+    } catch (err) {
+        showToast('❌ 打开笔记失败: ' + err.message);
+    }
+}
+
+async function loadNotesList() {
+    try {
+        const data = await db.loadNotes(showingArchived ? 'archived' : 'normal');
+        notes = Array.isArray(data) ? data : [];
+        notes.sort((a, b) => {
+            const ta = new Date(String(a.updated_at || a.updatedAt || 0).replace(' ', 'T')).getTime() || 0;
+            const tb = new Date(String(b.updated_at || b.updatedAt || 0).replace(' ', 'T')).getTime() || 0;
+            return tb - ta;
+        });
+        renderList();
+    } catch (err) {
+        showToast('❌ 加载笔记失败: ' + err.message);
+        notes = [];
+        renderList();
+    }
+}
+
+// ================================================================
+// 新建笔记弹窗 —— 打开 / 关闭
+// ================================================================
+function openNewNoteModal() {
+    const modal = document.getElementById('newNoteModal');
+    const input = document.getElementById('newNoteTitleInput');
+    const errorEl = document.getElementById('newNoteError');
+    input.value = '';
+    errorEl.textContent = '';
+
+    // 先释放当前持有焦点的元素（Quill / 按钮等）的 DOM 焦点，
+    // 避免 WebKitGTK 把焦点"钉"在旧元素上、吞掉后续 input.focus()。
+    try {
+        if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+        }
+    } catch (e) {}
+
+    modal.classList.add('active');
+
+    // 与批注弹窗相同的 100ms 时机聚焦；若 300ms 后复核发现焦点没落上，再补一次。
+    // 不做 quill.disable() / contentEditable=false / pointer-events 等任何
+    // 对 Quill 的操作 —— 那正是第二次起焦点卡死的根源之一。
+    _scheduleModalFocus(input);
+}
+
+// 弹窗打开后聚焦输入框：100ms 首次聚焦 + 300ms 复核补焦（均单次，非循环抢焦点）
+function _scheduleModalFocus(el) {
+    if (_modalFocusTimer) clearTimeout(_modalFocusTimer);
+    if (_modalFocusRetryTimer) clearTimeout(_modalFocusRetryTimer);
+    _modalFocusTimer = setTimeout(() => {
+        _modalFocusTimer = null;
+        try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+        _modalFocusRetryTimer = setTimeout(() => {
+            _modalFocusRetryTimer = null;
+            try {
+                const m = document.getElementById('newNoteModal');
+                if (m && m.classList.contains('active')) {
+                    el.focus({ preventScroll: true });
+                }
+            } catch (e) {}
+        }, 300);
+    }, 100);
+}
+
+function closeNewNoteModal() {
+    const modal = document.getElementById('newNoteModal');
+    modal.classList.remove('active');
+
+    // 取消尚未触发的聚焦/复核定时器
+    if (_modalFocusTimer) { clearTimeout(_modalFocusTimer); _modalFocusTimer = null; }
+    if (_modalFocusRetryTimer) { clearTimeout(_modalFocusRetryTimer); _modalFocusRetryTimer = null; }
+
+    // 关闭后【不再自动 quill.focus()】：
+    // 之前每次关弹窗都把焦点喂给编辑器，会让 WebKitGTK 的焦点状态"粘"在
+    // Quill 上，下一次打开弹窗时它拒绝把焦点让给输入框（第二次起失效的直接诱因）。
+    // 需要焦点自动回编辑器的话，点一下编辑区即可。
+    // 若确认问题解决后仍想自动回焦，可改回守卫版（弹窗再次打开时自动取消）：
+    //   if (window._quillRestoreTimer) clearTimeout(window._quillRestoreTimer);
+    //   window._quillRestoreTimer = setTimeout(() => {
+    //       window._quillRestoreTimer = null;
+    //       try {
+    //           if (document.querySelector('.modal-overlay.active')) return;
+    //           quill.focus();
+    //       } catch (e) {}
+    //   }, 100);
+}
+
+// ================================================================
+// 新建笔记 —— 主流程
+// ================================================================
+async function createNewNote() {
+    console.log('🆕 触发新建笔记');
+
+    // 注意：这里不再对 Quill 做任何 disable/blur/contenteditable 操作。
+    // 弹窗打开时遮罩层（z-index:2000）会盖住整个编辑器，Quill 收不到任何
+    // 点击/按键；全局快捷键也已在 keydown 里按弹窗状态拦截。
+    // 对"已聚焦"的 Quill 做 disable 在 pywebview(WebKitGTK) 下会导致焦点
+    // 卡死在编辑器上，之后弹窗输入框再也无法获得焦点。
+
+    if (db.isFileProtocol() && !db.isPyWebview()) {
+        const ready = await waitForBackend(3000);
+        if (!ready) {
+            showToast('❌ 后端未就绪，请稍后重试');
+            return;
+        }
+    }
+
+    // 先保存当前
+    try { await saveCurrentNote(true); } catch (e) {}
+
+    // 打开弹窗
+    openNewNoteModal();
+}
+
+// 弹窗按钮事件：确认创建
+async function confirmCreateNewNote() {
+    const input = document.getElementById('newNoteTitleInput');
+    const errorEl = document.getElementById('newNoteError');
+    const title = input.value.trim();
+    if (!title) {
+        errorEl.textContent = '标题不能为空';
+        try { input.focus(); } catch (e) {}
+        return;
+    }
+
+    closeNewNoteModal();
+
+    try {
+        const result = await db.createNote(title, '');
+        if (!result || !result.ok) {
+            showToast('❌ 创建失败: ' + ((result && result.error) || '未知错误'));
+            return;
+        }
+        if (!result.filename) {
+            showToast('❌ 创建失败: 后端未返回文件名');
+            return;
+        }
+        await loadNotesList();
+        await openNote(result.filename);
+        showToast('✅ 笔记已创建');
+    } catch (err) {
+        showToast('❌ 创建失败: ' + (err && err.message ? err.message : String(err)));
+    }
+}
+
+// ================================================================
+// 删除 / 归档
+// ================================================================
+async function restoreNote(filename) {
+    if (!filename) return;
+    try {
+        const r = await fetch(`/api/notes/archive/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        const data = await r.json();
+        if (data && data.ok === false) {
+            showToast('❌ 恢复失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        showToast('♻️ 已恢复到笔记列表');
+        await loadNotesList();
+    } catch (e) {
+        showToast('❌ 恢复失败: ' + e.message);
+    }
+}
+
+async function deleteNotes(filenames) {
+    if (!filenames.length) return;
+    if (db.isFileProtocol() && !db.isPyWebview()) {
+        const ready = await waitForBackend(3000);
+        if (!ready) { showToast('❌ 后端未就绪，请稍后重试'); return; }
+    }
+    try { await saveCurrentNote(true); } catch (e) {}
+
+    const confirmed = await askConfirm({
+        title: '确认删除',
+        text: `确定要删除 ${filenames.length} 篇笔记吗？删除后无法恢复。`,
+        icon: 'warning',
+        confirmButtonColor: '#f56c6c',
+        confirmButtonText: '删除',
+        cancelButtonText: '取消'
+    });
+    if (!confirmed.isConfirmed) return;
+    try {
+        for (const f of filenames) await db.deleteNote(f);
+        const needSwitch = currentNoteId && filenames.includes(currentNoteId);
+        let nextFilename = null;
+        if (needSwitch) {
+            const idx = notes.findIndex(n => n.filename === currentNoteId);
+            const remaining = notes.filter(n => !filenames.includes(n.filename));
+            if (remaining.length > 0) nextFilename = remaining[Math.min(idx, remaining.length - 1)]?.filename;
+            currentNoteId = null;
+        }
+        await loadNotesList();
+        if (needSwitch) { if (nextFilename) await openNote(nextFilename); else clearEditor(); }
+        showToast(`已删除 ${filenames.length} 篇笔记`);
+    } catch (err) { showToast('❌ 删除失败: ' + err.message); }
+}
+
+async function archiveNotes(filenames) {
+    if (!filenames.length) return;
+    if (db.isFileProtocol() && !db.isPyWebview()) {
+        const ready = await waitForBackend(3000);
+        if (!ready) { showToast('❌ 后端未就绪，请稍后重试'); return; }
+    }
+    try { await saveCurrentNote(true); } catch (e) {}
+
+    const confirmed = await askConfirm({
+        title: '确认归档',
+        text: `确定归档 ${filenames.length} 篇笔记吗？`,
+        icon: 'question',
+        confirmButtonColor: '#409eff',
+        confirmButtonText: '归档',
+        cancelButtonText: '取消'
+    });
+    if (!confirmed.isConfirmed) return;
+    try {
+        for (const f of filenames) await db.archiveNote(f);
+        const needSwitch = currentNoteId && filenames.includes(currentNoteId);
+        let nextFilename = null;
+        if (needSwitch) {
+            const idx = notes.findIndex(n => n.filename === currentNoteId);
+            const remaining = notes.filter(n => !filenames.includes(n.filename));
+            if (remaining.length > 0) nextFilename = remaining[Math.min(idx, remaining.length - 1)]?.filename;
+            currentNoteId = null;
+        }
+        await loadNotesList();
+        if (needSwitch) { if (nextFilename) await openNote(nextFilename); else clearEditor(); }
+        showToast(`已归档 ${filenames.length} 篇笔记`);
+    } catch (err) { showToast('❌ 归档失败: ' + err.message); }
+}
+
+function clearEditor() {
+    currentNoteId = null;
+    titleInput.value = '';
+    quill.setContents([], 'silent');
+    quill.history.clear();
+    _lastSavedFilename = '';
+    _lastSavedContent = '';
+    _lastSavedTitle = '';
+    _pendingSave = false;
+    _lastBqCount = -1;
+
+    document.getElementById('updateTimeDisplay').innerText = '--';
+    updateWordCount();
+    decorateBlockquotes(true);
+    if (isPreviewMode) updatePreview();
+    document.title = '智能笔记';
+    setSaveState('saved');
+    autoSaveStatus.textContent = '💾 自动保存中...';
+    autoSaveStatus.style.color = '#909399';
+    renderList();
+}
+
+// ================================================================
+// 导出
+// ================================================================
+async function exportNote(format) {
+    if (!currentNoteId) { showToast('没有打开的笔记'); return; }
+    await saveCurrentNote(true);
+    const note = notes.find(n => n.filename === currentNoteId);
+    const title = note?.title || '未命名';
+    const contentHtml = quill.root.innerHTML;
+    const plainText = quill.getText() || '';
+    const safeTitle = title.replace(/[\\/:*?"<>|]/g, '_');
+    let blob = null, filename = '';
+    try {
+        switch (format) {
+            case 'pdf': {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = `<h1 style="font-size:26px;margin-bottom:20px;border-bottom:1px solid #eee;padding-bottom:12px;">${escapeHtml(title)}</h1>${contentHtml}`;
+                tempDiv.style.padding = '40px';
+                tempDiv.style.maxWidth = '800px';
+                tempDiv.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                document.body.appendChild(tempDiv);
+                blob = await html2pdf().set({ margin: 10, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4' } }).from(tempDiv).output('blob');
+                document.body.removeChild(tempDiv);
+                filename = `${safeTitle}.pdf`;
+                break;
+            }
+            case 'word': {
+                const wordHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title><style>body{font-family:sans-serif;padding:40px;max-width:800px;margin:0 auto;line-height:1.8;}h1{color:#1a1a2e;border-bottom:1px solid #eee;padding-bottom:12px;}pre{background:#1e293b;color:#e2e8f0;padding:14px;border-radius:6px;}code{background:#f5f7fa;padding:2px 5px;border-radius:4px;color:#dc2626;}blockquote{border-left:4px solid #409eff;padding:0.6em 1.1em;margin:1em 0;background:#f5f7fa;}</style></head><body><h1>${escapeHtml(title)}</h1>${contentHtml}</body></html>`;
+                blob = new Blob([wordHtml], { type: 'application/msword' });
+                filename = `${safeTitle}.doc`;
+                break;
+            }
+            case 'html': {
+                const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:40px;max-width:820px;margin:0 auto;line-height:1.85;color:#303133;}h1{color:#1a1a2e;border-bottom:1px solid #eee;padding-bottom:12px;}pre{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:6px;}code{background:#f5f7fa;padding:2px 6px;border-radius:4px;color:#dc2626;}blockquote{border-left:4px solid #409eff;padding:0.6em 1.1em;margin:1em 0;background:#f5f7fa;border-radius:0 6px 6px 0;}img{max-width:100%;}</style></head><body><h1>${escapeHtml(title)}</h1>${contentHtml}</body></html>`;
+                blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                filename = `${safeTitle}.html`;
+                break;
+            }
+            case 'txt': {
+                blob = new Blob([`标题：${title}\n更新时间：${getNow()}\n\n${plainText}`], { type: 'text/plain;charset=utf-8' });
+                filename = `${safeTitle}.txt`;
+                break;
+            }
+            default: return;
+        }
+        saveAs(blob, filename);
+        showToast('✅ 导出成功');
+    } catch (err) { showToast('❌ 导出失败: ' + err.message); }
+}
+
+// ================================================================
+// 预览 / 侧边栏
+// ================================================================
+function togglePreview() {
+    if (currentNoteId) saveCurrentNote(true);
+    isPreviewMode = !isPreviewMode;
+    UI.set('note_preview_mode', isPreviewMode ? '1' : '0');
+    const editorBody = document.getElementById('editorBody');
+    const previewScroll = document.getElementById('previewScroll');
+    const btnPreview = document.getElementById('btnPreview');
+    if (isPreviewMode) {
+        updatePreview();
+        editorBody.classList.add('preview');
+        previewScroll.classList.add('active');
+        btnPreview.classList.add('active');
+        btnPreview.querySelector('svg').innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+        editorBody.classList.remove('preview');
+        previewScroll.classList.remove('active');
+        btnPreview.classList.remove('active');
+        btnPreview.querySelector('svg').innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+        setTimeout(() => quill.focus(), 100);
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const expandBtn = document.getElementById('sidebarExpandBtn');
+    const btn = document.getElementById('btnToggleSidebar');
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    UI.set('note_sidebar_collapsed', isCollapsed ? '1' : '0');
+    if (isCollapsed) { expandBtn.classList.add('visible'); btn.classList.remove('active'); }
+    else { expandBtn.classList.remove('visible'); btn.classList.add('active'); }
+}
+
+function applyInitialUIState() {
+    const sidebar = document.getElementById('sidebar');
+    const expandBtn = document.getElementById('sidebarExpandBtn');
+    const btn = document.getElementById('btnToggleSidebar');
+    if (PREF.sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        expandBtn.classList.add('visible');
+        btn.classList.remove('active');
+    } else {
+        btn.classList.add('active');
+    }
+    if (isPreviewMode) {
+        const editorBody = document.getElementById('editorBody');
+        const previewScroll = document.getElementById('previewScroll');
+        const btnPreview = document.getElementById('btnPreview');
+        editorBody.classList.add('preview');
+        previewScroll.classList.add('active');
+        btnPreview.classList.add('active');
+        btnPreview.querySelector('svg').innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    }
+}
+
+// ================================================================
+// 静态事件绑定
+// ================================================================
+function bindStaticEvents() {
+    bindToolbar();
+
+    let titleTimer = null;
+    titleInput.addEventListener('input', () => {
+        clearTimeout(titleTimer);
+        titleTimer = setTimeout(() => {
+            const note = notes.find(n => n.filename === currentNoteId);
+            if (note) {
+                note.title = titleInput.value || '未命名';
+                updateListItemInPlace(note);
+            }
+            if (isPreviewMode) updatePreview();
+        }, 300);
+        markUnsaved();
+        scheduleSave();
+        if (currentNoteId) document.title = (titleInput.value || '无标题') + ' - 智能笔记';
+    });
+
+    // 打开新建弹窗
+    // 与工具栏按钮一致的 mousedown 保护：阻止"点击按钮"这个动作把焦点落到
+    // 按钮上。否则 WebKitGTK 会在松开鼠标时用点击焦点覆盖我们的 input.focus()，
+    // 表现为"按住鼠标才能输入、一松开焦点就被抢走"。
+    ['btnNew', 'emptyStateNewBtn'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.addEventListener('mousedown', (e) => e.preventDefault());
+    });
+    document.getElementById('btnNew').addEventListener('click', createNewNote);
+    document.getElementById('emptyStateNewBtn').addEventListener('click', createNewNote);
+
+    // 新建弹窗内部按钮
+    document.getElementById('confirmNewNoteBtn').addEventListener('click', confirmCreateNewNote);
+    document.getElementById('cancelNewNoteBtn').addEventListener('click', closeNewNoteModal);
+    document.getElementById('closeNewNoteBtn').addEventListener('click', closeNewNoteModal);
+    document.getElementById('newNoteTitleInput').addEventListener('mousedown', (e) => {
+        // 点击输入框时立即重申焦点，抵消 WebKitGTK 点击流程的焦点回抢
+        setTimeout(() => { try { e.target.focus({ preventScroll: true }); } catch (err) {} }, 0);
+    });
+    document.getElementById('newNoteTitleInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); confirmCreateNewNote(); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeNewNoteModal(); }
+    });
+    // 点击遮罩关闭
+    document.getElementById('newNoteModal').addEventListener('mousedown', (e) => {
+        if (e.target.id === 'newNoteModal') closeNewNoteModal();
+    });
+
+    document.getElementById('btnSave').addEventListener('click', async () => {
+        if (!currentNoteId) { showToast('请先新建或打开一篇笔记'); return; }
+        const ok = await saveCurrentNote(true);
+        if (ok) showToast('✅ 已保存');
+    });
+    document.getElementById('btnExport').addEventListener('click', () => {
+        if (!currentNoteId) { showToast('没有打开的笔记'); return; }
+        document.getElementById('exportModal').classList.add('active');
+    });
+    document.getElementById('btnRemark').addEventListener('click', () => {
+        if (!currentNoteId) { showToast('请先打开一篇笔记'); return; }
+        const note = notes.find(n => n.filename === currentNoteId);
+        document.getElementById('remarkTextarea').value = note?.remark || '';
+        document.getElementById('remarkModal').classList.add('active');
+        setTimeout(() => document.getElementById('remarkTextarea').focus(), 100);
+    });
+    document.getElementById('btnPreview').addEventListener('click', togglePreview);
+    document.getElementById('btnToggleSidebar').addEventListener('click', toggleSidebar);
+    document.getElementById('sidebarExpandBtn').addEventListener('click', toggleSidebar);
+
+    document.getElementById('batchDelete').addEventListener('click', () => {
+        const ids = getSelectedFilenames();
+        if (!ids.length) { showToast('请先选择笔记'); return; }
+        deleteNotes(ids);
+    });
+    document.getElementById('batchArchive').addEventListener('click', () => {
+        const ids = getSelectedFilenames();
+        if (!ids.length) { showToast('请先选择笔记'); return; }
+        if (showingArchived) { showToast('归档箱里的笔记不能再次归档'); return; }
+        archiveNotes(ids);
+    });
+    document.getElementById('toggleArchived').addEventListener('click', async () => {
+        showingArchived = !showingArchived;
+        const btn = document.getElementById('toggleArchived');
+        btn.textContent = showingArchived ? '返回列表' : '归档箱';
+        btn.style.background = showingArchived ? '#409eff' : '';
+        btn.style.color = showingArchived ? '#fff' : '';
+        document.getElementById('batchArchive').style.display = showingArchived ? 'none' : '';
+        if (showingArchived && currentNoteId) { clearEditor(); }
+        await loadNotesList();
+    });
+    document.getElementById('selectAll').addEventListener('change', (e) => {
+        document.querySelectorAll('.note-check').forEach(cb => cb.checked = e.target.checked);
+    });
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchKeyword = e.target.value;
+        renderList();
+    });
+
+    document.getElementById('closeRemarkBtn').addEventListener('click', () => document.getElementById('remarkModal').classList.remove('active'));
+    document.getElementById('cancelRemarkBtn').addEventListener('click', () => document.getElementById('remarkModal').classList.remove('active'));
+    document.getElementById('saveRemarkBtn').addEventListener('click', async () => {
+        if (!currentNoteId) return;
+        const filenameToSave = currentNoteId;
+        const remark = document.getElementById('remarkTextarea').value;
+        const note = notes.find(n => n.filename === filenameToSave);
+        if (note) note.remark = remark;
+        const r = await db.updateNote(filenameToSave, null, null, remark);
+        if (r && r.ok) {
+            showToast('✅ 批注已保存');
+            if (note) updateListItemInPlace(note);
+        } else {
+            showToast('❌ 批注保存失败');
+        }
+        document.getElementById('remarkModal').classList.remove('active');
+    });
+
+    document.getElementById('closeExportBtn').addEventListener('click', () => document.getElementById('exportModal').classList.remove('active'));
+    document.getElementById('cancelExportBtn').addEventListener('click', () => document.getElementById('exportModal').classList.remove('active'));
+    document.querySelectorAll('.export-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            document.getElementById('exportModal').classList.remove('active');
+            exportNote(opt.dataset.format);
+        });
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('remarkModal')) e.target.classList.remove('active');
+        if (e.target === document.getElementById('exportModal')) e.target.classList.remove('active');
+    });
+
+    document.addEventListener('keydown', (e) => {
+        // 弹窗打开时忽略全局快捷键
+        if (document.getElementById('newNoteModal').classList.contains('active')) return;
+        if (document.querySelector('.swal2-container')) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            if (!currentNoteId) { showToast('请先新建或打开一篇笔记'); return; }
+            saveCurrentNote(true).then(ok => { if (ok) showToast('✅ 已保存'); });
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); document.getElementById('btnBold').click(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); document.getElementById('btnItalic').click(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'u') { e.preventDefault(); document.getElementById('btnUnderline').click(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); togglePreview(); }
+    });
+}
+
+// ================================================================
+// 初始化流程
+// ================================================================
+applyInitialUIState();
+bindStaticEvents();
+
+let _appInited = false;
+async function loadAndInitData() {
+    if (_appInited) return;
+    _appInited = true;
+    renderList();
+    await loadNotesList();
+    const urlParams = new URLSearchParams(window.location.search);
+    const noteRef = urlParams.get('noteId') || urlParams.get('id');
+    let targetFilename = null;
+    if (noteRef) {
+        // 思维导图页面传过来的是笔记的数据库 id（如 19），旧链接可能传文件名，两种都兼容
+        const byFilename = notes.find(n => String(n.filename) === String(noteRef));
+        const byId = notes.find(n => String(n.id) === String(noteRef));
+        const target = byFilename || byId;
+        if (target) targetFilename = target.filename;
+        else showToast('未找到对应的笔记（可能已删除或已归档）');
+    }
+    if (!targetFilename && notes.length > 0) targetFilename = notes[0].filename;
+    if (targetFilename) await openNote(targetFilename);
+    else clearEditor();
+    if (noteRef && targetFilename) {
+        const item = document.querySelector(`#noteList .note-item[data-filename="${targetFilename}"]`);
+        if (item && item.scrollIntoView) item.scrollIntoView({ block: 'center' });
+    }
+}
+
+(async () => {
+    renderList();
+    await Promise.race([
+        new Promise(resolve => {
+            if (window.pywebview && window.pywebview.api) { resolve(true); return; }
+            window.addEventListener('pywebviewready', () => resolve(true), { once: true });
+        }),
+        new Promise(resolve => setTimeout(() => resolve(false), 1500))
+    ]);
+    await loadAndInitData();
+})();
+
+window.addEventListener('pywebviewready', () => { loadAndInitData(); });
+
+window.addEventListener('beforeunload', () => {
+    if (currentNoteId && window.pywebview && window.pywebview.api) {
+        try {
+            const content = quill.root.innerHTML;
+            const title = titleInput.value || '未命名';
+            window.pywebview.api.update_note(currentNoteId, title, content, null);
+        } catch (e) {}
+    }
+});
+
+console.log('📄 [note_fixed] 脚本执行完毕');
+</script>
+<input type="file" id="noteImageInput" accept="image/*" style="display:none;">
+</body>
+</html>
