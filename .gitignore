@@ -1,0 +1,26 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---- 体积大的依赖（不进仓库，clone 后自动下载/生成）----
+models/
+chroma_notes_db/
+nodes_bm25_cache.pkl
+nodes_bm25_cache.pkl.fingerprint
+*.pkl
+
+# ---- 运行时数据（含个人笔记 / 导图 / 聊天记录，不进仓库）----
+shuj/
+bij/
+
+# ---- 第三方源码副本（含 .git，约 281MB）----
+html/lib/assistant-ui/
+
+# ---- 备份与日志 ----
+*.bak
+*.bak_config
+*.log
+*.log.err
